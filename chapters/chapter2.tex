@@ -1,0 +1,104 @@
+\chapter{Tổng quan các nghiên cứu liên quan}
+\label{chap:relatedwork}
+
+Chương này trả lời câu hỏi: trước khi bài báo của Hardt, Recht và Singer~\cite{hardt2016train} xuất hiện vào năm 2016, các nhà nghiên cứu đã tiếp cận vấn đề Generalization và Algorithmic Stability như thế nào, và những hạn chế nào trong các công trình trước đó đã tạo ra khoảng trống nghiên cứu (research gap) mà bài báo hướng tới giải quyết.
+
+\section{Các nghiên cứu về Generalization}
+\label{sec:cacnghiencuu-generalization}
+
+Các hướng nghiên cứu về Generalization trước năm 2016 có thể được chia thành ba nhóm chính. Để thuận tiện cho việc trình bày, đồ án phân nhóm các hướng tiếp cận tiêu biểu thành ba nhóm dựa trên cơ sở phân tích chính của từng phương pháp; đây là cách tổ chức phục vụ mục đích trình bày của đồ án, không phải một hệ thống phân loại chính thức và đầy đủ của toàn bộ lĩnh vực Generalization.
+
+\subsection{Hướng 1 -- Generalization dựa trên độ phức tạp mô hình}
+
+Nhóm lý thuyết cổ điển và có ảnh hưởng lớn nhất trong Learning Theory tìm cách giới hạn Generalization Error dựa trên độ phức tạp của tập giả thuyết (Hypothesis Class) mà thuật toán học có thể chọn ra, bao gồm:
+\begin{itemize}
+    \item \textbf{PAC Learning} (Probably Approximately Correct Learning): xây dựng khung lý thuyết xác suất để đánh giá khi nào một thuật toán học có thể học được một khái niệm với sai số nhỏ và xác suất cao~\cite{vapnik1998statistical}.
+    \item \textbf{VC Dimension} (Vapnik--Chervonenkis Dimension): đo lường khả năng "phân loại được mọi cách gán nhãn" (shattering) của một họ hàm giả thuyết. VC Dimension càng lớn, lớp giả thuyết có khả năng biểu diễn càng cao, do đó có thể làm tăng nguy cơ overfitting nếu kích thước dữ liệu và các điều kiện học không đủ để kiểm soát độ phức tạp này~\cite{vapnik1998statistical}.
+    \item \textbf{Rademacher Complexity}: đo độ phức tạp của một lớp hàm thông qua khả năng khớp với các nhãn ngẫu nhiên (random noise). Phương pháp này cung cấp một công cụ xây dựng giới hạn tổng quát hóa phụ thuộc vào lớp hàm và phân phối dữ liệu, đồng thời có thể cho giới hạn chặt hơn một số kết quả dựa trên VC Dimension trong những thiết lập nhất định~\cite{mohri2018foundations}.
+    \item \textbf{Uniform Convergence}: nguyên lý chung cho rằng nếu sai số thực nghiệm hội tụ đều (uniformly) về sai số kỳ vọng trên toàn bộ hypothesis class, thì thuật toán chọn ra giả thuyết tốt nhất trên tập huấn luyện cũng sẽ tổng quát hóa tốt.
+\end{itemize}
+Điểm chung của các phương pháp này là: chúng tìm cách giới hạn Generalization Error dựa trên độ phức tạp của hypothesis class, kích thước tập dữ liệu, và các giả định về phân phối dữ liệu, mà \emph{không} quan tâm đến đặc điểm cụ thể của thuật toán tối ưu được dùng để huấn luyện.
+
+\subsection{Hướng 2 -- Generalization thông qua Regularization}
+
+Hướng tiếp cận thứ hai tập trung vào các kỹ thuật điều chuẩn (regularization) nhằm kiểm soát trực tiếp độ phức tạp của mô hình hoặc quá trình huấn luyện để hạn chế overfitting, bao gồm:
+\begin{itemize}
+    \item \textbf{L1 Regularization}: thêm thành phần phạt tỉ lệ với $\|w\|_1$ vào hàm mục tiêu, khuyến khích nghiệm thưa (sparse)~\cite{tibshirani1996regression}.
+    \item \textbf{L2 Regularization / Weight Decay}: thêm thành phần phạt tỉ lệ với $\|w\|_2^2$, giúp giới hạn độ lớn của tham số~\cite{hoerl1970ridge}.
+    \item \textbf{Early Stopping}: dừng huấn luyện trước khi mô hình bắt đầu overfit, dựa trên việc theo dõi sai số trên tập validation~\cite{prechelt1998early}.
+\end{itemize}
+Các kỹ thuật trên hoạt động bằng cách kiểm soát độ phức tạp của mô hình (L1/L2) hoặc kiểm soát trực tiếp quá trình huấn luyện (Early Stopping), từ đó gián tiếp làm giảm Generalization Gap. Tuy nhiên, các phương pháp này thường đòi hỏi phải lựa chọn và điều chỉnh thêm siêu tham số (hyperparameter), và không giải thích được \emph{tại sao} bản thân thuật toán SGD -- khi không có regularization tường minh -- cũng có xu hướng tổng quát hóa tốt.
+
+\subsection{Hướng 3 -- Generalization trong quá trình tối ưu hóa}
+
+Hướng nghiên cứu thứ ba, gần với bài báo được khảo sát nhất, xem xét ảnh hưởng của chính thuật toán tối ưu hóa (chứ không chỉ độ phức tạp mô hình hay regularization tường minh) đến khả năng tổng quát hóa. Trong hướng này, phân tích SGD thông qua \textit{Algorithmic Stability} là một công cụ đặc biệt phù hợp, bởi nó cho phép liên hệ trực tiếp các đặc tính của thuật toán cập nhật (learning rate, số bước cập nhật, tính Lipschitz/Smoothness của hàm mất mát) với giới hạn tổng quát hóa, mà không cần dựa vào độ phức tạp tĩnh của hypothesis class.
+
+Bảng~\ref{tab:tonghop-generalization} tổng hợp lại ba hướng nghiên cứu nói trên.
+
+\begin{table}[H]
+\centering
+\caption{Tổng hợp các hướng nghiên cứu về Generalization trước năm 2016.}
+\label{tab:tonghop-generalization}
+\begin{tabular}{|p{3.3cm}|p{5cm}|p{5cm}|}
+\hline
+\textbf{Hướng nghiên cứu} & \textbf{Ý tưởng chính} & \textbf{Hạn chế cần xem xét} \\ \hline
+PAC Learning / VC Dimension & Giới hạn Generalization dựa trên độ phức tạp của hypothesis class & Có thể cho giới hạn rất lỏng (vacuous) với mô hình phức tạp, nhiều tham số \\ \hline
+Rademacher Complexity & Đo độ phức tạp của lớp hàm thông qua khả năng khớp nhiễu ngẫu nhiên & Việc tính toán/ước lượng có thể khó khăn trong thực tế \\ \hline
+Regularization (L1, L2, Early Stopping) & Kiểm soát độ phức tạp mô hình hoặc quá trình huấn luyện & Cần lựa chọn và điều chỉnh thêm siêu tham số; không giải thích vai trò nội tại của thuật toán tối ưu \\ \hline
+Stability-based Generalization & Phân tích mức độ nhạy cảm của thuật toán đối với thay đổi nhỏ trong dữ liệu & Cần xác định rõ điều kiện (Lipschitz, Smoothness,...) để chứng minh tính ổn định \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Các nghiên cứu về Algorithmic Stability}
+\label{sec:nghiencuu-stability}
+
+Đây là nền tảng lý thuyết trực tiếp của bài báo, do đó được trình bày chi tiết hơn theo trình tự phát triển lịch sử.
+
+\subsection{Devroye và Wagner (1979)}
+
+Devroye và Wagner~\cite{devroye1979distribution} là một trong những công trình đầu tiên khảo sát mối liên hệ giữa tính ổn định của một luật quyết định (decision rule) và khả năng tổng quát hóa của nó, trong bối cảnh các phương pháp phân loại dựa trên hàm thế năng (potential function rules). Đây có thể xem là tiền đề sơ khai cho ý tưởng dùng độ nhạy của thuật toán đối với nhiễu loạn dữ liệu để suy ra giới hạn sai số.
+
+\subsection{Kearns và Ron (1999)}
+
+Kearns và Ron~\cite{kearns1999algorithmic} khảo sát mối liên hệ giữa Stability và Generalization thông qua phương pháp đánh giá leave-one-out cross-validation. Công trình này đưa ra các "sanity-check bounds" dựa trên tính ổn định của thuật toán, góp phần làm rõ hơn vai trò của stability như một công cụ phân tích độc lập với độ phức tạp VC truyền thống.
+
+\subsection{Bousquet và Elisseeff (2002)}
+
+Đây là công trình nền tảng quan trọng nhất đối với bài báo được khảo sát. Bousquet và Elisseeff~\cite{bousquet2002stability}, trong bài báo \textit{``Stability and Generalization''}, đã chính thức hóa khái niệm \textbf{Uniform Stability}: một thuật toán học được xem là ổn định nếu khi thay đổi một mẫu bất kỳ trong tập dữ liệu huấn luyện, kết quả (mô hình) mà thuật toán tạo ra không thay đổi quá nhiều. Cụ thể, các tác giả chứng minh rằng nếu một thuật toán có tính $\epsilon$-uniformly stable thì Generalization Error kỳ vọng của thuật toán đó bị giới hạn bởi $\epsilon$.
+
+Ba câu hỏi cốt lõi mà công trình này làm rõ là:
+\begin{itemize}
+    \item \textbf{Thuật toán ổn định là gì?} Là thuật toán mà kết quả đầu ra (mô hình) thay đổi rất ít khi dữ liệu huấn luyện thay đổi một lượng nhỏ.
+    \item \textbf{Thay đổi một mẫu dữ liệu huấn luyện ảnh hưởng thế nào đến kết quả?} Nếu thuật toán ổn định, ảnh hưởng này bị chặn trên bởi một đại lượng $\epsilon$ không phụ thuộc vào mẫu dữ liệu cụ thể bị thay đổi.
+    \item \textbf{Tại sao Stability có thể dẫn đến Generalization?} Bởi vì nếu thuật toán không nhạy cảm với từng mẫu dữ liệu riêng lẻ, nó khó có thể "ghi nhớ" (memorize) các đặc điểm riêng của tập huấn luyện, và do đó có xu hướng học được quy luật tổng quát hơn.
+\end{itemize}
+
+Uniform Stability không trực tiếp yêu cầu hai mô hình học được từ $S$ và $S'$ phải có bộ tham số gần nhau. Khái niệm này kiểm soát sự khác biệt về \emph{giá trị hàm mất mát} trên một mẫu đánh giá bất kỳ khi một mẫu trong tập huấn luyện bị thay đổi -- tức là kiểm soát đầu ra (giá trị dự đoán/loss) của thuật toán, chứ không phải khoảng cách giữa hai vector tham số trong không gian tham số. Định nghĩa hình thức được trình bày lại trong Chương~3.
+
+Khung lý thuyết Uniform Stability của Bousquet và Elisseeff chính là công cụ trung tâm mà Hardt, Recht và Singer sử dụng và áp dụng trực tiếp cho SGD (sẽ được trình bày chi tiết trong Chương~3).
+
+\subsection{Shalev-Shwartz và cộng sự (2010)}
+
+Shalev-Shwartz và cộng sự~\cite{shalev2010learnability} tiếp tục phát triển mối quan hệ giữa Stability, Uniform Convergence và khả năng học được (learnability) của một bài toán. Công trình này chỉ ra rằng, trong trường hợp tổng quát, uniform convergence không phải là điều kiện cần cho learnability, nhưng một dạng Stability phù hợp (AERM stability) lại tương đương với khả năng học được trong bài toán tối ưu lồi. Điều này củng cố thêm vai trò trung tâm của Stability như một công cụ phân tích Generalization, độc lập với các giới hạn dựa trên độ phức tạp hypothesis class.
+
+\subsection{Các nghiên cứu về hội tụ của SGD}
+
+Song song với các nghiên cứu về Stability, nhiều công trình khác (ví dụ Robbins và Monro~\cite{robbins1951stochastic}, Bottou~\cite{bottou2010large}) tập trung phân tích khả năng \textbf{hội tụ} (convergence) của SGD: tốc độ giảm của hàm mất mát, điều kiện hội tụ của learning rate, và hiệu quả tính toán khi huấn luyện trên dữ liệu lớn. Đây là hai khái niệm khác nhau:
+\begin{itemize}
+    \item \textbf{Optimization Convergence}: SGD có tìm được nghiệm, hoặc đạt được giá trị hàm mục tiêu đủ tốt trên tập huấn luyện hay không?
+    \item \textbf{Generalization}: mô hình thu được có hoạt động tốt trên dữ liệu mới (chưa từng gặp) hay không?
+\end{itemize}
+Hai vấn đề này có liên quan nhưng \emph{không đồng nhất}: một thuật toán có thể hội tụ rất nhanh về điểm tối ưu của Empirical Risk nhưng vẫn tổng quát hóa kém nếu điểm tối ưu đó "quá khớp" với dữ liệu huấn luyện. Đây chính là lý do bài báo của Hardt, Recht và Singer tập trung vào phân tích Stability của \emph{quá trình} cập nhật SGD, thay vì chỉ phân tích tốc độ hội tụ của nó.
+
+\section{Hạn chế của các nghiên cứu trước đây}
+\label{sec:hanche}
+
+Dựa trên các công trình đã khảo sát ở trên, có thể chỉ ra ba hạn chế mà bài báo của Hardt, Recht và Singer~\cite{hardt2016train} nêu ra như động lực mở rộng nghiên cứu. Các hạn chế này được gắn với những thiết lập lý thuyết cụ thể của một số công trình trước đó, không phải là nhận định áp dụng cho toàn bộ tài liệu về Stability.
+
+\textbf{Hạn chế 1 -- Cần phân tích trực tiếp Stability của quá trình tối ưu lặp hữu hạn.} Uniform Stability là một khái niệm tổng quát về thuật toán học, không giới hạn ở các thuật toán tìm nghiệm tối ưu. Tuy nhiên, minh họa ứng dụng ban đầu của Bousquet và Elisseeff~\cite{bousquet2002stability} chủ yếu gắn với bài toán Regularized Empirical Risk Minimization, nơi đối tượng phân tích là \emph{nghiệm tối ưu} (hoặc nghiệm gần tối ưu) của bài toán. Trong khi đó, SGD khi chạy một số bước hữu hạn $T$ thường chỉ tạo ra một nghiệm \emph{gần đúng}, không nhất thiết là nghiệm tối ưu của $R_S$. Đây là một phần động lực khiến Hardt, Recht và Singer tập trung phân tích trực tiếp quỹ đạo cập nhật của SGD qua $T$ bước hữu hạn, thay vì chỉ áp dụng các kết quả Stability đã biết cho một số thiết lập ERM cụ thể.
+
+\textbf{Hạn chế 2 -- Cần giới hạn Stability bao quát thiết lập huấn luyện nhiều epoch.} Một số kết quả trước đây được xây dựng trong những thiết lập lấy mẫu hoặc số lần duyệt dữ liệu nhất định (ví dụ \textit{single-pass}, mỗi mẫu dữ liệu chỉ được sử dụng đúng một lần), chưa trực tiếp cung cấp giới hạn Stability tổng quát cho quá trình SGD qua nhiều bước cập nhật. Trong khi đó, SGD trong thực hành thường được chạy qua nhiều epoch, nghĩa là một mẫu dữ liệu có thể được sử dụng lặp lại nhiều lần.
+
+\textbf{Hạn chế 3 -- Phân tích Stability cho trường hợp Non-convex còn hạn chế.} Các kết quả Stability trước đó thường dựa vào những điều kiện cấu trúc như tính lồi (convexity) để kiểm soát sự thay đổi giữa các nghiệm hoặc quỹ đạo tối ưu. Việc mở rộng phân tích sang trường hợp hàm mất mát không lồi -- như trong huấn luyện mạng nơ-ron sâu -- đặt ra thêm thách thức, do các quy tắc cập nhật gradient không còn được đảm bảo là non-expansive, đòi hỏi Hardt, Recht và Singer phải sử dụng các kỹ thuật chứng minh khác.
+
+\textbf{Khoảng trống nghiên cứu (research gap).} Tổng hợp lại, bài báo của Hardt, Recht và Singer (2016)~\cite{hardt2016train} hướng tới lấp những khoảng trống nêu trên bằng cách phân tích trực tiếp tính ổn định của \emph{chính quá trình cập nhật} SGD (thay vì nghiệm tối ưu chính xác), cho cả thiết lập nhiều epoch, trong cả hai trường hợp bài toán tối ưu lồi và không lồi, từ đó xây dựng các giới hạn tổng quát hóa (generalization bound) phụ thuộc trực tiếp vào số bước huấn luyện $T$, learning rate $\alpha_t$ và số lượng mẫu dữ liệu $n$. Cơ sở lý thuyết và các kết quả cụ thể của phân tích này được trình bày chi tiết trong Chương~3.

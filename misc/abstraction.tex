@@ -1,0 +1,11 @@
+\chapter*{TÓM TẮT ĐỒ ÁN MÔN HỌC}
+\markboth{TÓM TẮT ĐỒ ÁN MÔN HỌC}{TÓM TẮT ĐỒ ÁN MÔN HỌC}
+\vspace*{1.5ex}
+
+Trong học máy (Machine Learning), quá trình huấn luyện mô hình thường được thực hiện thông qua việc tối thiểu hóa hàm mất mát (Loss Function) nhằm tìm ra bộ tham số phù hợp. Gradient Descent (GD) là một phương pháp tối ưu phổ biến, trong đó Stochastic Gradient Descent (SGD) sử dụng gradient được tính từ từng mẫu dữ liệu ngẫu nhiên để cập nhật tham số, giúp giảm chi phí tính toán trong quá trình huấn luyện. Tuy nhiên, bên cạnh hiệu quả tối ưu, khả năng tổng quát hóa (Generalization) của mô hình trên dữ liệu chưa từng được quan sát cũng là một vấn đề quan trọng. Đồ án tập trung nghiên cứu bài báo \textit{Train Faster, Generalize Better: Stability of Stochastic Gradient Descent} của Hardt, Recht và Singer (2016), nhằm tìm hiểu mối quan hệ giữa tính ổn định thuật toán (Algorithmic Stability) của SGD và khả năng tổng quát hóa của mô hình.
+
+Nội dung đồ án trình bày các cơ sở lý thuyết về SGD, Empirical Risk, Population Risk, Generalization Error và Uniform Stability. Trên cơ sở đó, đồ án phân tích phương pháp đánh giá tính ổn định của các thuật toán học ngẫu nhiên và các kết quả lý thuyết về Stability của SGD trong hai trường hợp tối ưu lồi (Convex Optimization) và tối ưu không lồi (Non-convex Optimization). Bên cạnh việc phân tích lý thuyết, đồ án còn triển khai các thực nghiệm dựa trên phương pháp và thiết lập phù hợp với bài báo nhằm khảo sát ảnh hưởng của learning rate, số bước huấn luyện và các điều kiện tối ưu đến tính ổn định của SGD. Kết quả thực nghiệm được sử dụng để đối chiếu với các nhận định và kết quả lý thuyết được trình bày trong bài báo.
+
+Thông qua nghiên cứu và thực nghiệm, đồ án làm rõ mối liên hệ giữa quá trình tối ưu hóa bằng SGD, tính ổn định thuật toán và khả năng tổng quát hóa trong học máy.
+
+\textbf{Từ khóa:} Stochastic Gradient Descent, Algorithmic Stability, Uniform Stability, Generalization, Convex Optimization, Non-convex Optimization.

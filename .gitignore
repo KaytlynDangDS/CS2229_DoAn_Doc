@@ -1,0 +1,38 @@
+# ---- LaTeX build artifacts ----
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.toc
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+*.xdv
+
+# latexmk
+*.fdb_latexmk
+*.fls
+
+# biber/biblatex
+*.bcf
+*-blx.bib
+*.run.xml
+
+# LaTeX3 / expl3
+*.hd
+
+# Build output (ignore only the compiled thesis PDF, keep source assets like misc/uit_logo.pdf)
+/main.pdf
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp

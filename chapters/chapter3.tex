@@ -1,0 +1,341 @@
+\chapter{Cơ sở lý thuyết}
+\label{chap:coso}
+
+Đây là chương quan trọng nhất của đồ án. Khác với Chương~1, chương này đi sâu vào các định nghĩa, giả định, bổ đề và định lý toán học mà Hardt, Recht và Singer~\cite{hardt2016train} sử dụng để chứng minh tính ổn định (Stability) của SGD, từ đó suy ra giới hạn Generalization. Các định nghĩa, bổ đề và định lý được đánh số theo đúng thứ tự xuất hiện trong bài báo gốc (Section~2 và Section~3) để tiện đối chiếu.
+
+\section{Stochastic Gradient Descent}
+\label{sec:sgd-toanhoc}
+
+Xét bài toán tối ưu hóa Empirical Risk đã giới thiệu ở Chương~1: cho tập dữ liệu huấn luyện $S = (z_1, \ldots, z_n)$ và hàm mất mát $f(w; z)$, ta cần tìm $w$ tối thiểu hóa
+\[
+R_S(w) = \frac{1}{n}\sum_{i=1}^{n} f(w; z_i).
+\]
+
+SGD giải bài toán này bằng nguyên lý cập nhật lặp: tại mỗi bước $t = 0, 1, \ldots, T-1$, một mẫu dữ liệu $z_{i_t}$ được chọn ngẫu nhiên, và tham số được cập nhật theo gradient của hàm mất mát trên mẫu đó:
+\[
+w_{t+1} = w_t - \alpha_t \nabla_w f(w_t; z_{i_t}),
+\]
+trong đó $w_t$ là tham số mô hình tại bước $t$, $\alpha_t$ là learning rate tại bước $t$, và $\nabla_w f$ là gradient của hàm mất mát theo tham số $w$. Điểm mấu chốt của thiết lập này -- theo đúng mô hình phân tích trong bài báo -- là \emph{mỗi bước cập nhật chỉ sử dụng gradient của một mẫu dữ liệu duy nhất}, chứ không phải gradient trung bình trên toàn bộ tập dữ liệu như GD.
+
+Có hai cách phổ biến để lựa chọn chỉ số $i_t$ tại mỗi bước:
+\begin{itemize}
+    \item \textbf{Sampling with replacement}: tại mỗi bước $t$, chỉ số $i_t$ được chọn ngẫu nhiên và độc lập, đều trên $\{1, \ldots, n\}$ (có thể lặp lại giữa các bước).
+    \item \textbf{Random reshuffling}: dữ liệu được xáo trộn ngẫu nhiên một lần, sau đó duyệt tuần tự qua các mẫu theo thứ tự đã xáo trộn (mỗi mẫu được dùng đúng một lần trong một epoch).
+\end{itemize}
+Hai cách lấy mẫu này có tính chất thống kê khác nhau; phần lớn các kết quả lý thuyết trong Section~3 của bài báo được chứng minh cho trường hợp \textit{sampling with replacement}, vì tính độc lập giữa các bước giúp đơn giản hóa việc phân tích xác suất.
+
+Learning rate $\alpha_t$ đóng vai trò quyết định đến cả tốc độ hội tụ lẫn, như sẽ thấy trong các mục sau, tính ổn định của thuật toán: learning rate càng lớn, mỗi bước cập nhật càng có thể làm thay đổi tham số nhiều hơn, khiến thuật toán nhạy cảm hơn với từng mẫu dữ liệu cụ thể.
+
+\section{Empirical Risk và Population Risk}
+\label{sec:risk}
+
+\subsection{Population Risk}
+
+\textit{Population Risk} là giá trị kỳ vọng của hàm mất mát trên toàn bộ phân phối dữ liệu thực $\mathcal{D}$ (không chỉ giới hạn trong tập huấn luyện):
+\[
+R(w) = \mathbb{E}_{z \sim \mathcal{D}}\left[f(w; z)\right].
+\]
+Trong đó $\mathcal{D}$ là phân phối dữ liệu thực mà ta giả định dữ liệu được sinh ra từ đó, $z$ là một mẫu dữ liệu được lấy từ $\mathcal{D}$, và $f(w; z)$ là giá trị mất mát của mô hình với tham số $w$ trên mẫu đó. Population Risk phản ánh khả năng hoạt động thực sự của mô hình trên dữ liệu được lấy từ phân phối thực -- tức là khả năng tổng quát hóa.
+
+\subsection{Empirical Risk}
+
+\textit{Empirical Risk} là giá trị mất mát trung bình trên tập dữ liệu huấn luyện quan sát được, gồm $n$ mẫu $S = (z_1, z_2, \ldots, z_n)$:
+\[
+R_S(w) = \frac{1}{n}\sum_{i=1}^{n} f(w; z_i).
+\]
+Empirical Risk được sử dụng làm mục tiêu tối ưu trong thực tế, vì ta không thể quan sát hay tính toán trực tiếp trên toàn bộ phân phối dữ liệu thực $\mathcal{D}$, mà chỉ có một tập mẫu hữu hạn $S$ được lấy từ $\mathcal{D}$.
+
+\subsection{So sánh Population Risk và Empirical Risk}
+
+Bảng~\ref{tab:sosanh-risk} tóm tắt sự khác biệt giữa hai đại lượng này.
+
+\begin{table}[H]
+\centering
+\caption{So sánh Population Risk và Empirical Risk.}
+\label{tab:sosanh-risk}
+\begin{tabular}{|p{2.6cm}|p{5.3cm}|p{5.3cm}|}
+\hline
+\textbf{Tiêu chí} & \textbf{Population Risk $R(w)$} & \textbf{Empirical Risk $R_S(w)$} \\ \hline
+Phạm vi & Toàn bộ phân phối dữ liệu $\mathcal{D}$ & Tập huấn luyện hữu hạn $S$, $n$ mẫu \\ \hline
+Bản chất & Giá trị kỳ vọng & Giá trị trung bình \\ \hline
+Khả năng tính toán & Thường không thể tính trực tiếp & Có thể tính trực tiếp từ dữ liệu quan sát được \\ \hline
+Vai trò & Đánh giá khả năng tổng quát hóa & Mục tiêu tối ưu trong quá trình huấn luyện \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Generalization Error}
+\label{sec:generr}
+
+\subsection{Định nghĩa Generalization Error}
+
+Theo bài báo, Generalization Error của một bộ tham số $w$ cụ thể được định nghĩa là độ chênh lệch giữa Empirical Risk và Population Risk:
+\[
+GE(w) = R_S(w) - R(w).
+\]
+Nếu $GE(w)$ gần $0$, mô hình có mức lỗi trên tập huấn luyện gần với mức lỗi trên phân phối dữ liệu thực -- tức là tổng quát hóa tốt. Nếu $|GE(w)|$ lớn, tồn tại sự khác biệt đáng kể giữa hai mức lỗi -- thường là dấu hiệu của overfitting (khi $R_S(w) \ll R(w)$). Dấu của Generalization Error phụ thuộc vào quy ước lấy hiệu; trong bài báo, các tác giả định nghĩa theo thứ tự \textit{Empirical Risk trừ Population Risk}.
+
+\subsection{Expected Generalization Error}
+
+Vì SGD có yếu tố ngẫu nhiên (trong việc chọn mẫu $i_t$) và tập dữ liệu huấn luyện $S$ cũng được xem là được lấy ngẫu nhiên từ $\mathcal{D}$, các tác giả xét đại lượng \textit{Expected Generalization Error}, lấy kỳ vọng trên cả sự ngẫu nhiên của $S$ và của thuật toán $A$:
+\[
+\epsilon_{\mathrm{gen}} = \mathbb{E}_{S, A}\left[R_S(A(S)) - R(A(S))\right],
+\]
+trong đó $A$ là thuật toán học máy (ở đây là SGD), $S$ là tập dữ liệu huấn luyện, và $A(S)$ là mô hình (bộ tham số) thu được sau khi huấn luyện $A$ trên $S$. Kỳ vọng $\mathbb{E}_{S,A}$ được lấy trên cả sự ngẫu nhiên của việc lấy mẫu $S$ từ $\mathcal{D}$ lẫn sự ngẫu nhiên nội tại của thuật toán $A$ (việc chọn $i_t$ tại mỗi bước).
+
+\subsection{Mối quan hệ với Overfitting}
+
+Generalization Error, theo định nghĩa trên, là một góc nhìn định lượng để phân tích sự khác biệt giữa kết quả huấn luyện và khả năng hoạt động của mô hình trên dữ liệu mới. $R(w)$ (Population Risk) là một kỳ vọng trên toàn bộ phân phối dữ liệu lý thuyết $\mathcal{D}$, trong khi \textit{Test Error} trong thực hành chỉ là một ước lượng của $R(w)$ dựa trên một tập kiểm tra hữu hạn. Hai đại lượng này gần nhau khi tập test đủ lớn, nhưng về mặt lý thuyết là không đồng nhất.
+
+Mục tiêu của bài báo, nói một cách ngắn gọn, là tìm cách kiểm soát và giới hạn $\epsilon_{\mathrm{gen}}$ khi $A$ là thuật toán SGD.
+
+\section{Algorithmic Stability và Uniform Stability}
+\label{sec:stability}
+
+Đây là phần lý thuyết trọng tâm, cung cấp công cụ trực tiếp để giới hạn $\epsilon_{\mathrm{gen}}$.
+
+\subsection{Algorithmic Stability}
+
+Một thuật toán được xem là \textit{ổn định} (stable) nếu kết quả mà nó tạo ra không thay đổi quá nhiều khi tập dữ liệu huấn luyện có một thay đổi nhỏ. Để hình thức hóa ý tưởng này, xét hai tập dữ liệu huấn luyện kích thước $n$, chỉ khác nhau đúng một mẫu dữ liệu:
+\[
+S = (z_1, z_2, \ldots, z_n), \qquad S' = (z_1, z_2, \ldots, z_i', \ldots, z_n).
+\]
+Nếu việc huấn luyện trên $S$ và trên $S'$ tạo ra hai mô hình có kết quả dự đoán gần giống nhau trên một mẫu dữ liệu đánh giá bất kỳ, ta nói thuật toán có tính ổn định tốt.
+
+\subsection{Uniform Stability}
+
+\textbf{Định nghĩa 2.1 (Uniform Stability).} Một thuật toán ngẫu nhiên $A$ được gọi là $\epsilon$-\textit{uniformly stable} nếu:
+\[
+\boxed{
+\sup_{S, S':\, d(S,S') \le 1} \; \sup_{z} \; \mathbb{E}_A\left[\left|f(A(S); z) - f(A(S'); z)\right|\right] \leq \epsilon,
+}
+\]
+trong đó $d(S,S') \le 1$ nghĩa là $S$ và $S'$ chỉ khác nhau tối đa một mẫu dữ liệu. Các thành phần khác: $A(S)$ là mô hình học được từ tập dữ liệu $S$; $A(S')$ là mô hình học được từ tập dữ liệu $S'$; $z$ là một mẫu dữ liệu bất kỳ dùng để đánh giá (không nhất thiết thuộc $S$ hay $S'$); $\epsilon$ là mức độ ổn định của thuật toán; kỳ vọng $\mathbb{E}_A$ được lấy trên sự ngẫu nhiên nội tại của thuật toán $A$ (ví dụ việc chọn mẫu $i_t$ của SGD). Dấu giá trị tuyệt đối đảm bảo định nghĩa kiểm soát độ lệch loss theo cả hai chiều (không chỉ chiều $A(S)$ cho loss nhỏ hơn $A(S')$), và việc lấy $\sup$ trên mọi cặp $(S,S')$ hợp lệ đảm bảo $\epsilon$ là một giới hạn đều (uniform), không phụ thuộc vào cặp dữ liệu cụ thể nào.
+
+Ý nghĩa: $\epsilon$ nhỏ nghĩa là việc thay đổi một mẫu huấn luyện bất kỳ chỉ gây ra sự thay đổi nhỏ trong giá trị hàm mất mát trên mọi điểm đánh giá $z$, cho thấy thuật toán ít nhạy cảm hơn với sự thay đổi của dữ liệu huấn luyện; $\epsilon$ lớn nghĩa là thuật toán nhạy cảm hơn với dữ liệu huấn luyện cụ thể, do đó có nguy cơ overfit cao hơn.
+
+\subsection{Mối liên hệ giữa Uniform Stability và Generalization}
+
+\textbf{Định lý 2.2 (Bousquet--Elisseeff, 2002).} Nếu thuật toán $A$ có tính $\epsilon$-uniformly stable thì:
+\[
+\boxed{
+\left|\mathbb{E}_{S, A}\left[R_S(A(S)) - R(A(S))\right]\right| \leq \epsilon.
+}
+\]
+
+Đây là kết quả nền tảng, cho thấy nếu một thuật toán có Uniform Stability tốt (tức $\epsilon$ nhỏ) thì Expected Generalization Error $\epsilon_{\mathrm{gen}}$ của thuật toán đó cũng bị giới hạn bởi chính $\epsilon$ đó. Đây là một giới hạn trên của kỳ vọng $\epsilon_{\mathrm{gen}}$, lấy trên toàn bộ phân phối của $S$ và tính ngẫu nhiên của $A$; nó không phải là một đảm bảo cho Generalization Gap của từng lần huấn luyện cụ thể, vốn vẫn có thể dao động quanh giá trị kỳ vọng này. Nói cách khác, \textbf{chứng minh tính ổn định của SGD là đủ để suy ra giới hạn tổng quát hóa kỳ vọng của SGD}, mà không cần phải phân tích trực tiếp độ phức tạp của hypothesis class mà SGD có thể "đi qua" trong quá trình huấn luyện. Đây chính là lý do tác giả lựa chọn Stability làm công cụ trung tâm để chứng minh khả năng tổng quát hóa của SGD, và toàn bộ phần còn lại của Chương~3 tập trung vào việc tính $\epsilon_{\mathrm{stab}}$ -- giá trị $\epsilon$ nhỏ nhất mà SGD đạt được tính $\epsilon$-uniformly stable theo Định nghĩa~2.1 -- cụ thể cho SGD.
+
+\section{Tính chất của các quy tắc cập nhật}
+\label{sec:quytaccapnhat}
+
+Mục này trình bày công cụ toán học (tương ứng Section~2.1 của bài báo) để phân tích mức độ sai khác giữa hai quá trình huấn luyện SGD chạy trên hai tập dữ liệu $S$ và $S'$ chỉ khác nhau một mẫu.
+
+\subsection{Gradient Update Rule}
+
+Mỗi bước cập nhật của SGD có thể được viết lại dưới dạng một ánh xạ (map) từ tham số hiện tại sang tham số kế tiếp:
+\[
+G(w) = w - \alpha \nabla f(w),
+\]
+trong đó $G$ là \textit{Gradient Update Rule}, ánh xạ $w_t \mapsto w_{t+1} = G(w_t)$. Việc nghiên cứu tính chất của ánh xạ $G$ (thay vì trực tiếp nghiên cứu dãy $\{w_t\}$) cho phép áp dụng các công cụ giải tích về ánh xạ co dãn (contraction/expansion) để kiểm soát khoảng cách giữa hai quỹ đạo tham số.
+
+\subsection{Expansive và Bounded Update Rules}
+
+\textbf{Định nghĩa 2.3.}
+\begin{itemize}
+    \item \textit{Expansive}: một quy tắc cập nhật $G$ được gọi là $\eta$-\textit{expansive} nếu với mọi $v, w$:
+    \[
+    \|G(v) - G(w)\| \leq \eta \|v - w\|.
+    \]
+    Ý nghĩa: nếu $\eta < 1$, khoảng cách giữa hai trạng thái sau khi áp dụng $G$ bị \emph{thu hẹp} (ánh xạ co); nếu $\eta = 1$, khoảng cách \emph{không tăng} (ánh xạ không giãn -- non-expansive); nếu $\eta > 1$, khoảng cách \emph{có thể tăng} lên sau mỗi bước cập nhật. Thuật ngữ $\eta$-expansive ở đây chỉ biểu thị một giới hạn trên đối với tỷ lệ thay đổi khoảng cách giữa hai điểm sau khi áp dụng $G$, không có nghĩa là khoảng cách thực tế luôn tăng lên.
+    \item \textit{Bounded}: một quy tắc cập nhật $G$ được gọi là $\sigma$-\textit{bounded} nếu với mọi $w$:
+    \[
+    \|w - G(w)\| \leq \sigma.
+    \]
+    Ý nghĩa: mức thay đổi của tham số trong một bước cập nhật duy nhất bị giới hạn bởi $\sigma$, bất kể giá trị cụ thể của $w$.
+\end{itemize}
+
+\subsection{Growth Recursion}
+
+\textbf{Bổ đề 2.4 (Growth Recursion).} Giả sử hai quá trình cập nhật tham số xuất phát từ cùng một điểm khởi tạo, $w_0 = w_0'$, và tại mỗi bước $t$ áp dụng lần lượt các quy tắc cập nhật $G_t$ và $G_t'$ để thu được $w_{t+1} = G_t(w_t)$ và $w_{t+1}' = G_t'(w_t')$. Đặt $\delta_t = \|w_t - w_t'\|$ là khoảng cách giữa hai trạng thái tại bước $t$. Khi đó:
+\[
+\delta_{t+1} \leq
+\begin{cases}
+\eta \, \delta_t, & \text{nếu } G_t = G_t' \text{ và } G_t \text{ là } \eta\text{-expansive}, \\[4pt]
+\min(\eta, 1)\,\delta_t + 2\sigma, & \text{nếu } G_t, G_t' \text{ khác nhau nhưng cùng } \eta\text{-expansive và } \sigma\text{-bounded}.
+\end{cases}
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=stealth, thick]
+\node (w0) at (0,0) {$w_0 = w_0'$};
+\node (wt) at (5.2,1.3) {$w_t$};
+\node (wtp) at (5.2,-1.3) {$w_t'$};
+\draw[->] (w0) -- (wt);
+\draw[->] (w0) -- (wtp);
+\draw[<->, dashed] (wt) -- (wtp) node[midway, right] {$\delta_t = \|w_t - w_t'\|$};
+\node[align=center] at (2.6,0.95) {\footnotesize huấn luyện\\[-2pt]\footnotesize trên $S$};
+\node[align=center] at (2.6,-0.95) {\footnotesize huấn luyện\\[-2pt]\footnotesize trên $S'$};
+\end{tikzpicture}
+\caption{Minh họa hai quá trình huấn luyện SGD trên $S$ và $S'$ (chỉ khác nhau một mẫu), xuất phát từ cùng điểm khởi tạo nhưng rẽ nhánh theo thời gian; khoảng cách $\delta_t$ giữa hai quỹ đạo được kiểm soát bởi Growth Recursion (Bổ đề~2.4).}
+\label{fig:growth-recursion}
+\end{figure}
+
+Ý nghĩa của bổ đề: nếu hai quá trình thực hiện \emph{cùng một} cập nhật $\eta$-expansive (trường hợp 1), khoảng cách giữa chúng được nhân lên tối đa $\eta$ lần sau mỗi bước -- nếu $\eta \le 1$, khoảng cách không tăng. Nếu hai quá trình sử dụng \emph{các cập nhật khác nhau} (trường hợp 2, xảy ra khi SGD chọn đúng mẫu dữ liệu khác biệt giữa $S$ và $S'$), khoảng cách có thể tăng thêm tối đa $2\sigma$ ở bước đó, nhưng vẫn bị kiểm soát. Growth Recursion chỉ là công cụ kiểm soát khoảng cách $\delta_t$ giữa hai quỹ đạo tham số qua từng bước; việc suy ra giới hạn Stability $\epsilon_{\mathrm{stab}}$ cụ thể cho SGD cần kết hợp thêm với xác suất gặp mẫu khác biệt và tính Lipschitz của hàm mất mát, như trình bày ở Mục~\ref{sec:stability-sgd}.
+
+\section{Tính ổn định của SGD}
+\label{sec:stability-sgd}
+
+Đây là phần trọng tâm nhất của bài báo, áp dụng toàn bộ công cụ ở Mục~\ref{sec:stability} và~\ref{sec:quytaccapnhat} để chứng minh tính ổn định của SGD, tương ứng với Section~3 của bài báo gốc.
+
+\subsection{Ý tưởng chứng minh}
+\label{subsec:yydungminh}
+
+Tác giả xét hai tập dữ liệu $S$ và $S'$, chỉ khác nhau đúng một mẫu, và chạy SGD song song trên cả hai tập dữ liệu này với cùng chuỗi ngẫu nhiên lựa chọn chỉ số $i_t$ (kỹ thuật \textit{coupling}). Việc sử dụng cùng một chuỗi ngẫu nhiên giúp hai quá trình SGD lựa chọn cùng một mẫu tại mỗi bước, ngoại trừ khi chỉ số được chọn trùng với vị trí mà $S$ và $S'$ khác nhau; nhờ đó, sự khác biệt giữa hai quỹ đạo có thể được phân tích thông qua xác suất gặp mẫu khác biệt và tính chất của các quy tắc cập nhật, thay vì phải xét độc lập hai chuỗi ngẫu nhiên khác nhau. Khoảng cách $\delta_t = \|w_t - w_t'\|$ giữa hai quỹ đạo tham số được theo dõi qua từng bước. Tại mỗi bước cập nhật, có hai trường hợp xảy ra:
+
+\textbf{Trường hợp 1:} SGD chọn một mẫu $z_{i_t}$ giống nhau ở cả hai tập dữ liệu (tức $i_t$ không trỏ đến mẫu khác biệt giữa $S$ và $S'$). Khi đó cả hai quá trình sử dụng \emph{cùng một} quy tắc cập nhật $G_t = G_t'$, nhưng vì $w_t \ne w_t'$ (có thể) nên gradient tại hai điểm này vẫn có thể khác nhau -- Growth Recursion trường hợp 1 được áp dụng.
+
+\textbf{Trường hợp 2:} SGD chọn đúng mẫu mà $S$ và $S'$ khác nhau. Với cách lấy mẫu ngẫu nhiên độc lập (sampling with replacement), xác suất xảy ra trường hợp này tại một bước bất kỳ là
+\[
+P = \frac{1}{n}.
+\]
+Khi đó, hai quá trình sử dụng hai quy tắc cập nhật khác nhau ($G_t \ne G_t'$, vì gradient được tính trên hai mẫu khác nhau), và khoảng cách $\delta_t$ có thể tăng lên đáng kể ở bước này -- Growth Recursion trường hợp 2 được áp dụng.
+
+Bằng cách kết hợp xác suất $P = 1/n$ của trường hợp 2 với giới hạn tăng trưởng của $\delta_t$ ở mỗi trường hợp (Bổ đề~2.4), tác giả xây dựng được một giới hạn kỳ vọng cho $\delta_T$ sau $T$ bước, từ đó suy ra giới hạn cho $\epsilon_{\mathrm{stab}}$ thông qua tính Lipschitz của hàm mất mát (mục~\ref{subsec:lipschitz-smooth}).
+
+Đối với bài toán \emph{không lồi} (non-convex), tác giả khai thác thêm một đặc điểm quan trọng: vì xác suất gặp đúng mẫu khác biệt ở mỗi bước chỉ là $1/n$, SGD có thể trải qua một số bước đáng kể mà không gặp mẫu khác biệt đó. Khoảng thời gian này được gọi là \textit{burn-in period}, và việc phân tích khéo léo thời điểm "gặp mẫu khác biệt lần đầu" là chìa khóa để có được giới hạn Stability hợp lý trong trường hợp non-convex, nơi khoảng cách $\delta_t$ có thể tăng theo cấp số nhân nếu không có tính lồi để kiểm soát.
+
+\subsection{Lipschitz và Smoothness}
+\label{subsec:lipschitz-smooth}
+
+Hai giả định toán học sau đóng vai trò then chốt trong việc chứng minh Stability, tương ứng Section~3.2 của bài báo. Hai điều kiện này có vai trò khác nhau và bổ sung cho nhau trong chứng minh: Lipschitz giới hạn độ lớn của gradient, qua đó kiểm soát mức thay đổi của tham số trong \emph{một bước cập nhật}; trong khi Smoothness kiểm soát mức độ thay đổi của chính gradient khi tham số thay đổi, qua đó quyết định quy tắc cập nhật có phải là ánh xạ không giãn (non-expansive) hay không.
+
+\textbf{A. Lipschitz Continuity.} \textbf{Định nghĩa 3.2.} Hàm $f(\cdot; z)$ được gọi là $L$-Lipschitz nếu với mọi $u, v$:
+\[
+|f(u) - f(v)| \leq L \|u - v\|,
+\]
+khi $f$ khả vi trên miền đang xét, điều kiện này tương đương với việc gradient bị chặn trên miền đó:
+\[
+\|\nabla f(x)\| \leq L.
+\]
+Ý nghĩa: khi tham số mô hình thay đổi một lượng nhỏ, giá trị hàm mất mát cũng chỉ thay đổi một lượng tương ứng nhỏ (không "bùng nổ"); đồng thời gradient của hàm mất mát luôn bị chặn, giúp kiểm soát độ lớn của mỗi bước cập nhật $\alpha_t \nabla f(w_t; z_{i_t})$, qua đó quy tắc cập nhật $\sigma$-bounded với $\sigma \le \alpha_t L$.
+
+\textbf{B. Smoothness.} \textbf{Định nghĩa 3.5.} Hàm $f(\cdot; z)$ được gọi là $\beta$-smooth nếu gradient của nó Lipschitz liên tục:
+\[
+\|\nabla f(u) - \nabla f(v)\| \leq \beta \|u - v\|.
+\]
+Ý nghĩa: gradient của hàm mất mát không thay đổi quá nhanh khi tham số thay đổi. Kết hợp với tính lồi và learning rate đủ nhỏ ($\alpha \le 2/\beta$), Smoothness giúp quy tắc cập nhật gradient $G(w) = w - \alpha \nabla f(w)$ trở thành một ánh xạ không giãn (non-expansive, $\eta \le 1$); tuy nhiên, một mình Smoothness không đảm bảo tính không giãn này khi hàm mất mát không lồi, như sẽ thấy ở Bổ đề~3.6.
+
+\textbf{C. Strong Convexity.} \textbf{Định nghĩa 3.4.} Hàm $f(\cdot; z)$ được gọi là $\gamma$-\textit{strongly convex} nếu với mọi $u, v$:
+\[
+f(u) \geq f(v) + \langle \nabla f(v), u - v\rangle + \frac{\gamma}{2}\|u - v\|^2.
+\]
+Khi $\gamma = 0$, bất đẳng thức trên trở thành điều kiện \textit{convex} (lồi) thông thường: $f(u) \geq f(v) + \langle \nabla f(v), u-v\rangle$. Strongly convex là một điều kiện chặt chẽ hơn convex thông thường, đòi hỏi hàm "cong lên" với độ cong tối thiểu $\gamma$ tại mọi điểm.
+
+Bảng~\ref{tab:vaitro-dieukien} tóm tắt vai trò của bốn điều kiện toán học nói trên trong chứng minh Stability.
+
+\begin{table}[H]
+\centering
+\caption{Vai trò của các điều kiện toán học trong chứng minh Stability của SGD.}
+\label{tab:vaitro-dieukien}
+\begin{tabular}{|p{2.8cm}|p{9.4cm}|}
+\hline
+\textbf{Điều kiện} & \textbf{Vai trò trong chứng minh} \\ \hline
+Lipschitz & Kiểm soát độ lớn gradient, qua đó kiểm soát mức thay đổi tham số (và Loss) trong một bước cập nhật. \\ \hline
+Smoothness & Kiểm soát mức thay đổi của gradient khi tham số thay đổi. \\ \hline
+Convexity & Giúp quy tắc cập nhật gradient trở thành ánh xạ không giãn khi kết hợp với Smoothness, qua đó kiểm soát khoảng cách giữa hai quỹ đạo cập nhật. \\ \hline
+Strong Convexity & Điều kiện mạnh hơn Convexity, có thể tạo tính co (khoảng cách giữa hai quỹ đạo giảm dần) cho quy tắc cập nhật. \\ \hline
+\end{tabular}
+\end{table}
+
+Dựa trên các giả định này, tác giả trình bày \textbf{Bổ đề 3.3} và \textbf{Bổ đề 3.6}, cho biết cụ thể hệ số $\eta$ (expansiveness) của quy tắc cập nhật gradient dưới các điều kiện lồi/không lồi và smoothness khác nhau:
+\begin{itemize}
+    \item Nếu $f$ là convex và $\beta$-smooth, với $\alpha \leq 2/\beta$, quy tắc cập nhật $G(w) = w - \alpha\nabla f(w)$ là $1$-expansive (tức \emph{non-expansive}): $\|G(v) - G(w)\| \leq \|v-w\|$ (Bổ đề~3.3).
+    \item Nếu $f$ chỉ $\beta$-smooth (không giả định lồi), quy tắc cập nhật gradient là $(1+\alpha\beta)$-expansive với mọi $\alpha > 0$ (Bổ đề~3.6) -- tức khoảng cách có thể tăng lên theo hệ số $(1+\alpha\beta) > 1$ sau mỗi bước.
+\end{itemize}
+Sự khác biệt giữa hai bổ đề này chính là lý do căn bản khiến giới hạn Stability trong trường hợp convex ``đẹp'' hơn hẳn (không tăng theo $T$ theo cấp số nhân) so với trường hợp non-convex.
+
+\subsection{Trường hợp Convex Optimization}
+\label{subsec:convex}
+
+Nội dung này tương ứng Section~3.3 của bài báo. Mục tiêu là chứng minh SGD có tính Uniform Stability khi hàm mất mát là hàm lồi và thỏa mãn các điều kiện Lipschitz, Smoothness.
+
+\textbf{Định lý 3.7.} Giả sử với mọi $z$, hàm mất mát $f(\cdot; z)$ là:
+\begin{itemize}
+    \item $\beta$-smooth,
+    \item convex,
+    \item $L$-Lipschitz,
+\end{itemize}
+và SGD được chạy với learning rate thỏa mãn $\alpha_t \leq 2/\beta$ với mọi $t$, trong $T$ bước. Khi đó SGD là $\epsilon_{\mathrm{stab}}$-uniformly stable với:
+\[
+\boxed{\epsilon_{\mathrm{stab}} \leq \frac{2L^2}{n}\sum_{t=1}^{T}\alpha_t.}
+\]
+
+Phân tích ý nghĩa của định lý:
+\begin{enumerate}
+    \item \textbf{Vai trò của $n$}: khi số lượng mẫu huấn luyện $n$ tăng, giới hạn Stability giảm theo tỉ lệ $1/n$ -- tập dữ liệu càng lớn, ảnh hưởng của việc thay đổi một mẫu càng nhỏ.
+    \item \textbf{Vai trò của learning rate}: tổng learning rate $\sum_{t=1}^T \alpha_t$ càng lớn thì giới hạn Stability càng lớn -- learning rate lớn khiến mỗi bước cập nhật "di chuyển" tham số nhiều hơn, làm tăng độ nhạy với dữ liệu.
+    \item \textbf{Vai trò của số bước cập nhật}: nếu learning rate không đổi $\alpha_t = \alpha$, giới hạn trở thành $\epsilon_{\mathrm{stab}} \leq 2\alpha L^2 T/n$ -- đây là giới hạn trên, và nó có thể tăng tuyến tính theo số bước huấn luyện $T$ nếu các yếu tố khác không đổi, chứ không có nghĩa Stability thực tế luôn tăng đúng theo tốc độ này.
+    \item \textbf{Điều kiện của định lý}: learning rate phải thỏa $\alpha_t \leq 2/\beta$ để đảm bảo quy tắc cập nhật là non-expansive (Bổ đề~3.3); nếu vi phạm điều kiện này, giới hạn trên không còn đúng.
+\end{enumerate}
+Ý nghĩa tổng quát: với hàm mất mát lồi, $L$-Lipschitz, $\beta$-smooth và learning rate thỏa $\alpha_t \le 2/\beta$ như giả định của Định lý~3.7, SGD có thể đạt được Stability tốt (và do đó Generalization tốt, theo Định lý~2.2) nếu tổng learning rate được kiểm soát hợp lý và số lượng mẫu huấn luyện đủ lớn -- ngay cả khi không sử dụng regularization tường minh nào.
+
+\subsection{Trường hợp Non-convex Optimization}
+\label{subsec:nonconvex}
+
+Nội dung này tương ứng Section~3.4 của bài báo, mở rộng phân tích Stability sang các hàm mất mát không lồi -- thiết lập gần với thực tế huấn luyện mạng nơ-ron sâu hơn.
+
+Điểm khác biệt căn bản so với trường hợp convex:
+\begin{itemize}
+    \item Không thể dựa vào tính lồi để đảm bảo quy tắc cập nhật gradient là non-expansive; theo Bổ đề~3.6, quy tắc cập nhật chỉ là $(1+\alpha_t\beta)$-expansive, nghĩa là khoảng cách giữa hai quỹ đạo \emph{có thể tăng} sau mỗi bước, kể cả khi hai quá trình dùng cùng một cập nhật.
+    \item Do đó, khoảng cách $\delta_t$ giữa hai quá trình huấn luyện có xu hướng tăng theo thời gian, và nếu không kiểm soát khéo léo có thể tăng theo cấp số nhân theo $T$.
+    \item Cần khai thác triệt để tính ngẫu nhiên trong việc lựa chọn mẫu của SGD (xác suất $1/n$ gặp đúng mẫu khác biệt, và khái niệm burn-in period đã nêu ở Mục~\ref{subsec:yydungminh}) để kiểm soát mức tăng này.
+\end{itemize}
+
+\textbf{Định lý 3.8.} Giả sử với mọi $z$, hàm mất mát $f(\cdot; z) \in [0, 1]$ (bị chặn trong đoạn $[0,1]$), là $L$-Lipschitz và $\beta$-smooth, và SGD được chạy với learning rate không tăng, thỏa mãn $\alpha_t \leq c/t$ với $t = 1, 2, \ldots, T$ (quy ước đánh số bước bắt đầu từ $t=1$ để tránh mẫu số bằng $0$, nhất quán với tổng $\sum_{t=1}^T \alpha_t$ dùng trong Định lý~3.7; $c$ là hằng số). Khi đó SGD là $\epsilon_{\mathrm{stab}}$-uniformly stable với:
+\[
+\boxed{
+\epsilon_{\mathrm{stab}} \leq \frac{1 + 1/(\beta c)}{n - 1}\,(2cL^2)^{\frac{1}{\beta c + 1}}\, T^{\frac{\beta c}{\beta c + 1}}.
+}
+\]
+Nếu bỏ qua các hằng số phụ thuộc vào $\beta, c, L$, giới hạn trên có thể viết gọn theo cấp bậc tăng trưởng:
+\[
+\epsilon_{\mathrm{stab}} \lesssim \frac{T^{1 - \frac{1}{\beta c + 1}}}{n}.
+\]
+
+Phân tích ý nghĩa của định lý:
+\begin{itemize}
+    \item Stability phụ thuộc vào số bước huấn luyện $T$ theo lũy thừa nhỏ hơn $1$ (vì $1 - \frac{1}{\beta c+1} < 1$), nghĩa là giới hạn Stability vẫn tăng theo $T$ nhưng với tốc độ \emph{dưới tuyến tính} (sub-linear). Giới hạn này còn phụ thuộc vào các hằng số $L, \beta, c$ thông qua số mũ $1/(\beta c+1)$ và hệ số $(2cL^2)^{1/(\beta c+1)}$, chứ không chỉ phụ thuộc vào $T$ và $n$ như dạng rút gọn ở trên thể hiện.
+    \item Điều kiện learning rate không tăng, thỏa $\alpha_t \le c/t$, là một giả định của Định lý~3.8 chứ không phải kết luận áp dụng cho mọi lịch learning rate; trong phạm vi giả định này, việc learning rate giảm dần theo $t$ là yếu tố then chốt giúp kiểm soát mức độ bất ổn tích lũy qua thời gian.
+    \item Khi số lượng mẫu huấn luyện $n$ tăng, giới hạn Stability vẫn có xu hướng giảm (tỉ lệ nghịch với $n-1$), tương tự trường hợp convex.
+    \item Với các giả định của Định lý~3.8 (loss bị chặn trong $[0,1]$, $L$-Lipschitz, $\beta$-smooth, learning rate không tăng và thỏa $\alpha_t \le c/t$), SGD vẫn có thể tổng quát hóa tốt trong bài toán không lồi nếu số bước huấn luyện $T$ được kiểm soát phù hợp (không huấn luyện quá lâu) và learning rate được giảm dần theo thời gian -- đây là cơ sở lý thuyết cho tiêu đề của bài báo: \textit{``Train faster, generalize better''}. Đây là một giới hạn lý thuyết trong phạm vi các giả định nêu trên, chứ không phải một kết quả cho thấy mọi mạng nơ-ron sâu đều tổng quát hóa tốt khi huấn luyện trong thời gian ngắn -- mạng nơ-ron thực tế thường không thỏa mãn chặt chẽ các giả định về tính Lipschitz hay Smoothness toàn cục.
+\end{itemize}
+
+Bảng~\ref{tab:sosanh-convex-nonconvex} so sánh trực tiếp hai kết quả chính của Chương~3.
+
+\begin{table}[H]
+\centering
+\caption{So sánh kết quả Stability của SGD trong trường hợp Convex và Non-convex.}
+\label{tab:sosanh-convex-nonconvex}
+\begin{tabular}{|p{2.8cm}|p{5.2cm}|p{5.2cm}|}
+\hline
+\textbf{Tiêu chí} & \textbf{Convex (Định lý~3.7)} & \textbf{Non-convex (Định lý~3.8)} \\ \hline
+Tính chất hàm mất mát & Lồi & Không yêu cầu lồi \\ \hline
+Điều kiện chính & Lipschitz, Smoothness, Convexity & Lipschitz, Smoothness, hàm mất mát bị chặn trong $[0,1]$ \\ \hline
+Learning Rate & $\alpha_t \leq 2/\beta$ (có thể không đổi) & $\alpha_t \leq c/t$, không tăng theo $t$ \\ \hline
+Stability Bound & Tỉ lệ với $\dfrac{1}{n}\sum_t \alpha_t$ & Tỉ lệ với $\dfrac{T^{1 - 1/(\beta c+1)}}{n}$ \\ \hline
+Ý tưởng chứng minh chính & Kiểm soát khoảng cách $\delta_t$ bằng tính non-expansive của cập nhật & Khai thác xác suất $1/n$ và thời điểm ngẫu nhiên SGD "gặp" mẫu khác biệt (burn-in period) \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Ảnh hưởng của một số kỹ thuật huấn luyện đến Stability}
+\label{sec:kythuat-stability}
+
+Ngoài hai kết quả lý thuyết chính về Stability của SGD (Định lý~3.7 và Định lý~3.8), bài báo còn thảo luận ảnh hưởng của một số kỹ thuật huấn luyện như Weight Decay, Gradient Clipping và Dropout đến những điều kiện liên quan đến tính ổn định của quá trình cập nhật. Mức độ chặt chẽ toán học của ba phân tích này khác nhau, như trình bày dưới đây.
+
+\begin{itemize}
+    \item \textbf{Weight Decay}: về mặt công thức, thêm một thành phần $\gamma w$ vào gradient cập nhật tương đương với việc cộng thêm một số hạng $\frac{\gamma}{2}\|w\|^2$ vào hàm mục tiêu. Khi hàm mất mát gốc là convex, số hạng này làm cho hàm mục tiêu mới có tính $\gamma$-strongly convex, và theo phân tích tương tự Bổ đề~3.3, hệ số expansiveness $\eta$ của quy tắc cập nhật có thể giảm xuống dưới $1$ rõ rệt hơn, có lợi cho Stability. Đây là một quan sát mang tính cấu trúc cho trường hợp hàm mất mát gốc lồi; với hàm mất mát không lồi, việc thêm Weight Decay không tự động khiến hàm mục tiêu trở thành strongly convex.
+    \item \textbf{Gradient Clipping}: về mặt công thức, giới hạn trực tiếp chuẩn của gradient được sử dụng trong bước cập nhật ($\|\nabla f\| \le L$ với $L$ được chọn trước) đảm bảo \emph{bước cập nhật} thỏa điều kiện $\sigma$-bounded với $\sigma \le \alpha_t L$. Điều này không đồng nghĩa hàm mất mát gốc tự động trở thành $L$-Lipschitz toàn cục -- clipping chỉ giới hạn gradient được dùng để cập nhật tham số, chứ không thay đổi bản chất của hàm mất mát ngoài vùng giá trị bị clip.
+    \item \textbf{Dropout}: Dropout thêm một nguồn nhiễu ngẫu nhiên vào quá trình huấn luyện (ngẫu nhiên "tắt" một số đơn vị trong mạng nơ-ron ở mỗi bước), có tác dụng trực giác là làm giảm độ nhạy của mô hình đối với từng đặc trưng (feature) hay từng mẫu dữ liệu cụ thể -- cùng tinh thần với mục tiêu của Uniform Stability. Bài báo không đưa ra một giới hạn Stability định lượng cho Dropout tương tự Định lý~3.7 hay 3.8; liên hệ này mang tính định tính.
+\end{itemize}
+
+Tóm lại, những kỹ thuật huấn luyện phổ biến trong thực hành đều có thể liên hệ được với tính ổn định của quá trình cập nhật SGD, nhưng chỉ Weight Decay và Gradient Clipping có cơ sở công thức tương đối trực tiếp, trong khi liên hệ với Dropout dừng ở mức định tính trong bài báo gốc.

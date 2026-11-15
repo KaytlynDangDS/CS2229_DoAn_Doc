@@ -1,0 +1,243 @@
+\chapter{Tổng quan}
+\label{chap:tongquan}
+
+Chương này trình bày bối cảnh chung của đồ án: thuật toán \ac{SGD}, vấn đề tổng quát hóa (Generalization) trong Machine Learning, động cơ nghiên cứu và mục tiêu, đóng góp chính của bài báo \textit{``Train faster, generalize better: Stability of stochastic gradient descent''} của Hardt, Recht và Singer~\cite{hardt2016train}. Mục tiêu của chương là giúp người đọc hiểu được bài toán nghiên cứu, lý do bài toán này cần được nghiên cứu, và vấn đề cụ thể mà bài báo muốn giải quyết.
+
+\section{Giới thiệu về SGD (Stochastic Gradient Descent)}
+\label{sec:gioithieu-sgd}
+
+\subsection{Machine Learning và bài toán học từ dữ liệu}
+
+Machine Learning (học máy) là một lĩnh vực của trí tuệ nhân tạo, tập trung nghiên cứu các phương pháp giúp máy tính học được quy luật hoặc mẫu (pattern) từ dữ liệu để thực hiện dự đoán hay ra quyết định mà không cần lập trình tường minh cho từng trường hợp. Thay vì xây dựng một hệ thống với các quy tắc cố định, người phát triển xác định một mô hình có các tham số cần học. Quá trình huấn luyện sẽ điều chỉnh những tham số này dựa trên dữ liệu nhằm cải thiện khả năng dự đoán của mô hình.
+
+Ví dụ, trong bài toán phân loại email, mô hình cần học cách phân biệt email thông thường và email rác dựa trên các đặc trưng của dữ liệu. Để thực hiện điều đó, mô hình sử dụng một hàm dự đoán với bộ tham số $w$. Các tham số này được điều chỉnh trong quá trình huấn luyện để đầu ra của mô hình ngày càng phù hợp với nhãn thực tế.
+
+Để đánh giá mức độ sai lệch giữa dự đoán của mô hình và kết quả thực tế, ta sử dụng hàm mất mát (Loss Function). Hàm mất mát nhận tham số mô hình và một mẫu dữ liệu làm đầu vào, sau đó trả về một giá trị thể hiện mức độ sai lệch của dự đoán. Giá trị mất mát càng nhỏ thì dự đoán của mô hình trên mẫu dữ liệu đó càng phù hợp với kết quả mong muốn.
+
+Như vậy, quá trình huấn luyện mô hình học máy có thể được xem là quá trình tìm kiếm bộ tham số phù hợp nhằm giảm thiểu giá trị hàm mất mát. Điều này dẫn đến một bài toán tối ưu hóa, được trình bày trong mục tiếp theo.
+
+\subsection{Bài toán tối ưu hóa trong Machine Learning}
+
+Xét tập dữ liệu huấn luyện gồm $n$ mẫu:
+\[
+S = (z_1, z_2, \ldots, z_n),
+\]
+trong đó mỗi $z_i$ biểu diễn một mẫu dữ liệu và $w$ là bộ tham số của mô hình. Gọi $f(w; z_i)$ là hàm mất mát của mô hình với tham số $w$ trên mẫu dữ liệu $z_i$.
+
+Mục tiêu của quá trình huấn luyện là tìm bộ tham số $w$ sao cho giá trị mất mát trung bình trên toàn bộ tập dữ liệu huấn luyện là nhỏ nhất. Đại lượng này được gọi là hàm mất mát thực nghiệm (Empirical Risk), được định nghĩa:
+\[
+R_S(w) = \frac{1}{n}\sum_{i=1}^{n} f(w; z_i).
+\]
+
+Do đó, bài toán huấn luyện có thể được biểu diễn dưới dạng bài toán tối ưu:
+\[
+w^\ast = \arg\min_w R_S(w) = \arg\min_w \frac{1}{n}\sum_{i=1}^{n} f(w; z_i),
+\]
+trong đó $w^\ast$ biểu diễn bộ tham số đạt giá trị tối ưu của hàm mục tiêu, nếu nghiệm tối ưu tồn tại. Trong thực tế, các thuật toán tối ưu thường chỉ tìm được nghiệm hoặc nghiệm gần tối ưu thông qua quá trình cập nhật lặp, thay vì luôn đảm bảo đạt được chính xác $w^\ast$.
+
+Tuy nhiên, đối với các tập dữ liệu có kích thước lớn hoặc mô hình có nhiều tham số, việc tìm nghiệm tối ưu trực tiếp thường không đơn giản. Vì vậy, các phương pháp tối ưu lặp (iterative optimization) được sử dụng để cập nhật tham số qua nhiều bước. Một trong những phương pháp phổ biến nhất là Gradient Descent.
+
+\subsection{Gradient Descent (GD)}
+
+\ac{GD} là phương pháp tối ưu hóa dựa trên gradient của hàm mục tiêu. Ý tưởng chính của phương pháp là cập nhật bộ tham số theo hướng ngược với gradient, bởi gradient chỉ ra hướng mà hàm mục tiêu tăng nhanh nhất tại một điểm. Di chuyển theo hướng ngược lại giúp giảm giá trị hàm mất mát trong điều kiện learning rate phù hợp.
+
+Với hàm mục tiêu là Empirical Risk $R_S(w)$, quy tắc cập nhật của GD tại bước $t$ được biểu diễn như sau:
+\[
+w_{t+1} = w_t - \alpha_t \nabla R_S(w_t),
+\]
+trong đó:
+\begin{itemize}
+    \item $w_t$ là bộ tham số tại bước cập nhật thứ $t$;
+    \item $\alpha_t$ là learning rate (tốc độ học), quyết định độ lớn của mỗi bước cập nhật;
+    \item $\nabla R_S(w_t)$ là gradient của hàm mất mát thực nghiệm tại $w_t$.
+\end{itemize}
+Do Empirical Risk được tính trên toàn bộ tập dữ liệu, gradient tại mỗi bước cập nhật có dạng:
+\[
+\nabla R_S(w_t) = \frac{1}{n}\sum_{i=1}^{n} \nabla_w f(w_t; z_i).
+\]
+
+Như vậy, để thực hiện một bước cập nhật, GD cần tính gradient trên toàn bộ $n$ mẫu dữ liệu huấn luyện. Phương pháp này cung cấp hướng cập nhật dựa trên toàn bộ tập dữ liệu, nhưng chi phí tính toán của mỗi bước có thể lớn khi số lượng mẫu tăng lên. Đây là một hạn chế đáng kể trong các bài toán học máy quy mô lớn.
+
+Để giảm chi phí tính toán cho mỗi lần cập nhật, Stochastic Gradient Descent được sử dụng bằng cách thay thế gradient tính trên toàn bộ tập dữ liệu bằng gradient tính trên một mẫu được chọn ngẫu nhiên.
+
+\subsection{Stochastic Gradient Descent (SGD)}
+
+Stochastic Gradient Descent (SGD) là một biến thể của Gradient Descent, trong đó thay vì sử dụng gradient trung bình trên toàn bộ tập dữ liệu, thuật toán chỉ sử dụng gradient của một mẫu dữ liệu được chọn ngẫu nhiên tại mỗi bước cập nhật.
+
+Cụ thể, tại bước $t$, thuật toán chọn ngẫu nhiên một mẫu $z_{i_t}$ từ tập huấn luyện và cập nhật tham số theo công thức:
+\[
+w_{t+1} = w_t - \alpha_t \nabla_w f(w_t; z_{i_t}).
+\]
+Trong đó:
+\begin{itemize}
+    \item $w_t$ là bộ tham số tại bước $t$;
+    \item $\alpha_t$ là learning rate tại bước $t$;
+    \item $i_t$ là chỉ số của mẫu dữ liệu được chọn ngẫu nhiên (có thể chọn theo cách lấy mẫu có hoàn lại -- \textit{sampling with replacement}, hoặc theo một hoán vị ngẫu nhiên của dữ liệu -- \textit{random reshuffling});
+    \item $\nabla_w f(w_t; z_{i_t})$ là gradient của hàm mất mát trên mẫu được chọn.
+\end{itemize}
+Khi mẫu dữ liệu được chọn ngẫu nhiên đều trên tập huấn luyện, gradient của mẫu được chọn là một ước lượng không chệch (unbiased estimator) của gradient toàn bộ tập dữ liệu:
+\[
+\mathbb{E}_{i_t}\left[\nabla_w f(w_t; z_{i_t})\right] = \nabla R_S(w_t).
+\]
+Điều này có nghĩa là gradient tính từ một mẫu riêng lẻ có thể khác với gradient toàn bộ tập dữ liệu, nhưng giá trị kỳ vọng của nó bằng gradient đầy đủ khi chỉ số mẫu được chọn ngẫu nhiên đều.
+
+So với GD, SGD có chi phí tính toán thấp hơn cho mỗi bước cập nhật vì chỉ cần xử lý một mẫu dữ liệu. Tuy nhiên, do việc lựa chọn mẫu mang tính ngẫu nhiên, hướng cập nhật có thể dao động giữa các bước thay vì luôn đi theo hướng giảm nhanh nhất của hàm mục tiêu.
+
+Trong thực tế, \textit{Mini-batch SGD} cũng được sử dụng phổ biến. Phương pháp này tính gradient trung bình trên một nhóm nhỏ gồm $b$ mẫu dữ liệu tại mỗi bước:
+\[
+w_{t+1} = w_t - \frac{\alpha_t}{b}\sum_{z \in B_t} \nabla_w f(w_t; z),
+\]
+trong đó $B_t$ là tập con dữ liệu được chọn tại bước $t$, có kích thước $b$. Mini-batch SGD là sự kết hợp giữa việc giảm chi phí tính toán của SGD và giảm dao động của gradient thông qua việc sử dụng nhiều mẫu trong mỗi lần cập nhật.
+
+Bảng~\ref{tab:gd-sgd-minibatch} tóm tắt sự khác biệt giữa ba phương pháp nói trên.
+
+\begin{table}[H]
+\centering
+\caption{So sánh Batch Gradient Descent, SGD và Mini-batch SGD.}
+\label{tab:gd-sgd-minibatch}
+\begin{tabular}{|p{2.6cm}|p{4.2cm}|p{3cm}|p{3.4cm}|}
+\hline
+\textbf{Tiêu chí} & \textbf{Dữ liệu dùng mỗi bước} & \textbf{Chi phí/bước} & \textbf{Đặc điểm cập nhật} \\ \hline
+Batch GD & Toàn bộ $n$ mẫu & Cao, tỉ lệ $O(n)$ & Ổn định, ít dao động \\ \hline
+SGD & Một mẫu duy nhất & Thấp, $O(1)$ & Dao động mạnh, nhiễu cao \\ \hline
+Mini-batch SGD & Một tập con $b$ mẫu & Trung bình, $O(b)$ & Cân bằng giữa chi phí và độ ổn định \\ \hline
+\end{tabular}
+\end{table}
+
+Trong phạm vi phân tích lý thuyết của bài báo \textit{Train Faster, Generalize Better: Stability of Stochastic Gradient Descent}, SGD chủ yếu được xét với mỗi bước cập nhật sử dụng gradient của một mẫu dữ liệu duy nhất, nên các phần tiếp theo của đồ án sẽ tập trung vào thiết lập này.
+
+\subsection{Ưu điểm và hạn chế của SGD}
+
+SGD có một số ưu điểm nổi bật:
+\begin{itemize}
+    \item \textbf{Giảm chi phí tính toán mỗi bước}: chỉ cần tính gradient trên một mẫu dữ liệu thay vì toàn bộ tập huấn luyện.
+    \item \textbf{Tiết kiệm bộ nhớ}: không cần sử dụng toàn bộ dữ liệu để tính gradient trong mỗi lần cập nhật.
+    \item \textbf{Phù hợp với dữ liệu quy mô lớn}: có thể thực hiện cập nhật tham số thường xuyên ngay cả khi tập dữ liệu có kích thước lớn.
+\end{itemize}
+Tuy nhiên, SGD cũng tồn tại một số hạn chế:
+\begin{itemize}
+    \item \textbf{Quỹ đạo cập nhật có tính dao động}: gradient từ từng mẫu có thể khác đáng kể so với gradient trung bình trên toàn bộ tập dữ liệu.
+    \item \textbf{Nhạy cảm với learning rate}: learning rate quá lớn có thể khiến quá trình tối ưu dao động hoặc không ổn định, trong khi learning rate quá nhỏ có thể làm quá trình học diễn ra chậm.
+    \item \textbf{Kết quả phụ thuộc vào quá trình lấy mẫu}: thứ tự và cách lựa chọn mẫu dữ liệu có thể ảnh hưởng đến quỹ đạo huấn luyện và kết quả cuối cùng.
+\end{itemize}
+
+Những đặc điểm trên đặt ra một vấn đề quan trọng: ngoài khả năng giảm hàm mất mát trên tập huấn luyện, quá trình cập nhật ngẫu nhiên của SGD ảnh hưởng như thế nào đến khả năng tổng quát hóa của mô hình trên dữ liệu chưa từng quan sát? Đây chính là vấn đề được nghiên cứu thông qua khái niệm \textit{Generalization} và \textit{Algorithmic Stability} trong các mục tiếp theo.
+
+\section{Vấn đề Generalization trong Machine Learning}
+\label{sec:generalization}
+
+\subsection{Khái niệm Generalization}
+
+\textit{Generalization} (khả năng tổng quát hóa) là khả năng của một mô hình học máy hoạt động tốt trên dữ liệu mới, chưa từng xuất hiện trong quá trình huấn luyện. Đây là một trong những tiêu chí quan trọng để đánh giá khả năng ứng dụng của mô hình trên dữ liệu thực tế, bởi vì mục tiêu cuối cùng của học máy không phải là ghi nhớ tập huấn luyện mà là học được quy luật tổng quát có thể áp dụng cho dữ liệu tương lai.
+
+\subsection{Training Error và Test Error}
+
+\textit{Training Error} là sai số được tính trên tập dữ liệu huấn luyện, tương ứng với Empirical Risk đã định nghĩa ở trên. Trong khi đó, \textit{Population Risk} là giá trị kỳ vọng của hàm mất mát trên toàn bộ phân phối dữ liệu thực -- một đại lượng lý thuyết, thường không thể tính trực tiếp. Trong thực nghiệm, \textit{Test Error} được tính trên một tập kiểm tra (test set) hữu hạn, độc lập với tập huấn luyện, và được sử dụng như một ước lượng của Population Risk chứ không đồng nhất hoàn toàn với đại lượng này: Test Error là một đại lượng thực nghiệm, tính được trực tiếp từ tập kiểm tra, trong khi Population Risk là một đại lượng kỳ vọng lý thuyết trên phân phối dữ liệu thực -- không nên dùng hai thuật ngữ này thay thế cho nhau. Một mô hình tốt cần có cả Training Error và Test Error đều thấp, và đặc biệt là khoảng cách giữa chúng không quá lớn.
+
+\subsection{Overfitting và Underfitting}
+
+\begin{itemize}
+    \item \textbf{Underfitting}: mô hình quá đơn giản, không đủ khả năng biểu diễn để học được quy luật trong dữ liệu, dẫn đến cả Training Error và Test Error đều cao.
+    \item \textbf{Overfitting}: mô hình học quá chi tiết các đặc điểm (kể cả nhiễu) của tập huấn luyện, khiến Training Error rất thấp nhưng Test Error lại cao.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=10cm, height=6.2cm,
+    xlabel={Độ phức tạp của mô hình},
+    ylabel={Sai số (Error)},
+    xtick=\empty, ytick=\empty,
+    axis lines=left,
+    legend pos=north east,
+    legend style={font=\small},
+]
+\addplot[domain=0.3:10, samples=100, thick, blue] {10/(x+1)};
+\addlegendentry{Training Error}
+\addplot[domain=0.3:10, samples=100, thick, red] {10/(x+1) + 0.15*(x-4.5)^2 + 0.2};
+\addlegendentry{Test Error}
+\draw[dashed] (axis cs:4.5,0) -- (axis cs:4.5,8);
+\node at (axis cs:1.8,7.6) {\footnotesize Underfitting};
+\node at (axis cs:8,7.6) {\footnotesize Overfitting};
+\node at (axis cs:4.5,-0.6) {\footnotesize Good fit};
+\end{axis}
+\end{tikzpicture}
+\caption{Minh họa quan hệ giữa độ phức tạp mô hình, Training Error và Test Error: vùng bên trái là Underfitting, vùng bên phải là Overfitting, vùng cân bằng ở giữa là Good Fit.}
+\label{fig:underfit-overfit}
+\end{figure}
+
+\subsection{Generalization Gap}
+
+\textit{Generalization Gap} được định nghĩa là khoảng cách giữa Empirical Risk $R_S(w)$ (lỗi trên tập huấn luyện) và Population Risk $R(w)$ (lỗi kỳ vọng trên toàn bộ phân phối dữ liệu thực), thường được xét qua độ lớn
+\[
+|R_S(w) - R(w)|.
+\]
+Độ lớn này càng nhỏ thì sự chênh lệch giữa Empirical Risk và Population Risk càng thấp, cho thấy mô hình có khả năng tổng quát hóa tốt hơn. Trong mục này, Generalization Gap được xét theo độ lớn tuyệt đối của sự chênh lệch nêu trên; ở Chương~3, đồ án sử dụng định nghĩa Generalization Error có dấu, $GE(w) = R_S(w) - R(w)$, theo đúng quy ước của bài báo gốc -- hai cách viết này không mâu thuẫn mà chỉ khác nhau ở việc có lấy giá trị tuyệt đối hay không. Nhiều yếu tố ảnh hưởng đến độ lớn của Generalization Gap, bao gồm:
+\begin{itemize}
+    \item Kích thước tập dữ liệu huấn luyện $n$;
+    \item Độ phức tạp (capacity) của mô hình;
+    \item Số bước huấn luyện (training steps/epochs);
+    \item Phương pháp tối ưu hóa được sử dụng (ví dụ SGD, Adam, v.v.);
+    \item Các kỹ thuật điều chuẩn (Regularization), chẳng hạn L1/L2 regularization, Dropout, Early Stopping.
+\end{itemize}
+
+Một điểm quan trọng cần nhấn mạnh: \textbf{một mô hình có Training Error rất thấp chưa chắc có Generalization Error thấp}. Mô hình có thể đã ghi nhớ (memorize) dữ liệu huấn luyện thay vì học được quy luật có thể áp dụng cho dữ liệu mới. Điều này đặc biệt đáng chú ý đối với các mạng nơ-ron sâu hiện đại, vốn có số lượng tham số rất lớn -- đôi khi lớn hơn cả số lượng mẫu huấn luyện -- nhưng trên thực tế vẫn tổng quát hóa tốt.
+
+Từ đó, câu hỏi nghiên cứu trung tâm được đặt ra:
+
+\begin{quote}
+\textit{Tại sao các mô hình được huấn luyện bằng SGD, đặc biệt là những mô hình có số lượng tham số lớn, vẫn có thể tổng quát hóa tốt dù không nhất thiết sử dụng regularization tường minh?}
+\end{quote}
+
+Đây chính là vấn đề nghiên cứu trung tâm mà bài báo của Hardt, Recht và Singer~\cite{hardt2016train} hướng tới giải quyết.
+
+\section{Động cơ nghiên cứu}
+\label{sec:dongco}
+
+Động cơ của bài báo có thể được trình bày qua ba vấn đề chính.
+
+\textbf{Thứ nhất -- Hạn chế của các phương pháp phân tích Generalization truyền thống.} Các lý thuyết cổ điển về Generalization (PAC Learning, VC Dimension, Rademacher Complexity) thường xây dựng giới hạn sai số tổng quát hóa dựa trên độ phức tạp của tập giả thuyết (hypothesis class) mà mô hình có thể biểu diễn. Tuy nhiên, đối với các mô hình có độ phức tạp lớn như mạng nơ-ron sâu, một số giới hạn tổng quát hóa dựa trên độ phức tạp của lớp giả thuyết có thể trở nên lỏng (vacuous), do đó chưa phản ánh tốt khả năng tổng quát hóa thực tế của mô hình trong một số thiết lập.
+
+\textbf{Thứ hai -- Vai trò của SGD chưa được giải thích đầy đủ về mặt lý thuyết.} SGD được sử dụng rộng rãi trong thực tế và thường cho kết quả tổng quát hóa tốt, nhưng phần lớn các phân tích trước đó tập trung vào khả năng \emph{hội tụ} của SGD (tốc độ giảm hàm mất mát) chứ chưa giải thích được tại sao \emph{chính quá trình tối ưu} bằng SGD lại góp phần tạo ra khả năng tổng quát hóa tốt.
+
+\textbf{Thứ ba -- Cần liên kết thời gian huấn luyện với Generalization.} Các tác giả đặt câu hỏi: liệu số bước cập nhật ($T$) của SGD có thể được sử dụng trực tiếp để xây dựng giới hạn tổng quát hóa hay không, thay vì chỉ dựa vào độ phức tạp tĩnh của mô hình.
+
+Ý tưởng trung tâm của bài báo có thể tóm tắt theo chuỗi liên hệ sau:
+\[
+\text{Số bước huấn luyện (Training Steps)} \;\longrightarrow\; \text{Tính ổn định thuật toán (Algorithmic Stability)} \;\longrightarrow\; \text{Khả năng tổng quát hóa (Generalization)}.
+\]
+Nói cách khác, số bước huấn luyện, tính ổn định của thuật toán tối ưu và khả năng tổng quát hóa của mô hình có mối liên hệ chặt chẽ với nhau. Đây là sợi chỉ xuyên suốt toàn bộ bài báo và là trọng tâm phân tích của đồ án này, chứ không đơn thuần là một khảo sát về ảnh hưởng của số epoch đến hiệu quả huấn luyện.
+
+\section{Mục tiêu và đóng góp của bài báo}
+\label{sec:mucdichdonggop}
+
+\subsection{Mục tiêu nghiên cứu}
+
+Bài báo của Hardt, Recht và Singer~\cite{hardt2016train} đặt ra các mục tiêu sau:
+\begin{itemize}
+    \item Phân tích mối quan hệ giữa \textit{Algorithmic Stability} (tính ổn định của thuật toán) và \textit{Generalization} (khả năng tổng quát hóa).
+    \item Xây dựng giới hạn tổng quát hóa (generalization bound) cho các mô hình được huấn luyện bằng SGD.
+    \item Phân tích tính ổn định của SGD trong cả bài toán tối ưu lồi (convex) và không lồi (non-convex).
+    \item Làm rõ ảnh hưởng của số bước huấn luyện $T$ đến khả năng tổng quát hóa của mô hình.
+\end{itemize}
+
+\subsection{Đóng góp chính}
+
+Hai đóng góp lý thuyết cốt lõi của bài báo là: (1) sử dụng khung Uniform Stability để xây dựng cơ sở phân tích Generalization của SGD, và (2) chứng minh giới hạn Stability của SGD trong cả hai thiết lập tối ưu lồi và không lồi. Ngoài hai kết quả chính này, bài báo còn dành một phần thảo luận mở rộng về ảnh hưởng của một số kỹ thuật huấn luyện phổ biến (Weight Decay, Gradient Clipping, Dropout) đến tính ổn định của quá trình cập nhật. Bảng~\ref{tab:donggop} tóm tắt các đóng góp này, phân biệt rõ giữa kết quả lý thuyết cốt lõi và phần thảo luận mở rộng.
+
+\begin{table}[H]
+\centering
+\caption{Các đóng góp chính của bài báo Hardt, Recht và Singer (2016).}
+\label{tab:donggop}
+\begin{tabular}{|p{3.3cm}|p{5.5cm}|p{4.2cm}|}
+\hline
+\textbf{Loại đóng góp} & \textbf{Nội dung} & \textbf{Ý nghĩa} \\ \hline
+Đóng góp cốt lõi & Sử dụng Uniform Stability làm công cụ phân tích & Cung cấp một hướng phân tích Generalization dựa trên tính ổn định của thuật toán tối ưu, bổ sung cho các phương pháp dựa trên độ phức tạp của mô hình \\ \hline
+Đóng góp cốt lõi & Phân tích Stability của SGD trong Convex Optimization & Đưa ra giới hạn ổn định tỉ lệ thuận với tổng learning rate trên số mẫu dữ liệu \\ \hline
+Đóng góp cốt lõi & Mở rộng phân tích Stability sang Non-convex Optimization & Xây dựng giới hạn Stability cho hàm mất mát không lồi, phù hợp với mạng nơ-ron sâu \\ \hline
+Thảo luận mở rộng & Ảnh hưởng của Weight Decay, Gradient Clipping, Dropout & Gợi ý định tính về tác động của các kỹ thuật huấn luyện này đến điều kiện ổn định, không phải kết quả lý thuyết trung tâm \\ \hline
+\end{tabular}
+\end{table}
+
+Các đóng góp này được trình bày trong phần \textit{Introduction} của bài báo gốc và được phát triển chi tiết trong các phần tiếp theo (Section 2, 3 và 4 của bài báo), tương ứng với nội dung sẽ được trình bày lại trong Chương~2 và Chương~3 của đồ án này.
