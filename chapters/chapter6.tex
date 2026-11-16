@@ -1,0 +1,69 @@
+\chapter{Kết luận và hướng phát triển}
+\label{chap:ketluan}
+
+\section{Tóm tắt kết quả của bài báo}
+\label{sec:tomtat}
+
+Bài báo của Hardt, Recht và Singer~\cite{hardt2016train} trả lời câu hỏi trung tâm ở Chương~\ref{chap:tongquan} bằng một chuỗi lập luận gồm bốn mắt xích:
+\[
+\epsilon_{\mathrm{gen}} \;\le\; \epsilon_{\mathrm{stab}} \;\le\; L\,\mathbb{E}[\delta_T] \;\le\; \text{nghiệm của công thức đệ quy theo } \eta, \sigma, n.
+\]
+\begin{enumerate}
+    \item \textbf{Stability suy ra Generalization} (Định lý~2.2): chỉ cần chứng minh SGD ổn định.
+    \item \textbf{Stability được đo bằng khoảng cách tham số}: nhờ tính Lipschitz và kỹ thuật coupling, chỉ cần theo dõi $\delta_t = \|w_t - w'_t\|$ giữa hai lần chạy trên $S$ và $S'$.
+    \item \textbf{Khoảng cách tham số tuân theo Growth Recursion} (Bổ đề~2.4): mỗi bước nhân với hệ số giãn nở $\eta$, và với xác suất $1/n$ bị cộng thêm tối đa $2\alpha_t L$.
+    \item \textbf{Hệ số giãn do hình dạng hàm mất mát quyết định} (Bổ đề~3.6): lồi thì $\eta \le 1$, không lồi thì $\eta = 1 + \alpha\beta$. Từ đó có Định lý~3.7 (lồi, giới hạn tỉ lệ $\sum_t \alpha_t / n$) và Định lý~3.8 (không lồi, giới hạn tỉ lệ $T^{1 - 1/(\beta c + 1)}/n$ nhờ burn-in và learning rate giảm dần).
+\end{enumerate}
+
+Hệ quả thực tiễn của chuỗi lập luận này là thông điệp trong tiêu đề bài báo: mô hình đạt lỗi huấn luyện thấp sau ít bước (``train faster'') thì có quỹ đạo tham số ngắn hơn trong không gian tham số, ổn định hơn, và do đó tổng quát hóa tốt hơn (``generalize better''). Bài báo cũng cho các kỹ thuật thực hành quen thuộc một cách giải thích thống nhất: Weight Decay giảm hệ số giãn nở, Gradient Clipping và Dropout giảm độ dài bước cập nhật, Early Stopping giới hạn số bước $T$. Chương~\ref{chap:convexrisk} cho thấy trong bài toán lồi, chạy nhiều epoch vẫn đạt excess risk chỉ kém kết quả một lượt qua dữ liệu tối đa $\sqrt{3}$ lần, và thực nghiệm ở Chương~\ref{chap:thucnghiem} xác nhận các xu hướng chính trên cả dữ liệu của bài báo lẫn thực nghiệm thu nhỏ của nhóm.
+
+\section{Hạn chế của bài báo}
+\label{sec:hanche-baibao}
+
+\begin{itemize}
+    \item \textbf{Giả thiết mạnh.} Các định lý yêu cầu hàm mất mát $L$-Lipschitz và $\beta$-smooth trên toàn miền. Mạng nơ-ron dùng ReLU và cross-entropy không thỏa chặt chẽ các giả thiết này, và hằng số $\beta$ của mạng sâu có thể rất lớn, làm giới hạn của Định lý~3.8 chỉ còn ý nghĩa trong vài epoch.
+    \item \textbf{Lịch learning rate $c/t$.} Định lý~3.8 cần learning rate giảm nhanh như $c/t$, trong khi thực tế thường dùng learning rate cố định theo từng giai đoạn hoặc giảm chậm hơn.
+    \item \textbf{Giới hạn theo kỳ vọng.} Mọi kết quả chỉ đúng cho kỳ vọng của Generalization Error, không phải cho một lần huấn luyện cụ thể với xác suất cao.
+    \item \textbf{Không phụ thuộc dữ liệu.} Uniform Stability lấy cận trên trên mọi cặp tập dữ liệu, nên với cùng số bước, giới hạn như nhau dù nhãn là thật hay ngẫu nhiên. Vì vậy giới hạn không phân biệt được mô hình học quy luật thật với mô hình ghi nhớ nhiễu.
+    \item \textbf{Khoảng cách tham số có thể là cận lỏng.} Thực nghiệm của nhóm (Mục~\ref{sec:thucnghiem-nhom}) cho thấy với hàm không lồi và learning rate lớn, hai mô hình có thể cách xa nhau trong không gian tham số nhưng vẫn có loss gần như nhau.
+\end{itemize}
+
+\section{Các câu hỏi mở do bài báo đặt ra}
+\label{sec:cauhoimo}
+
+Bản đầy đủ của bài báo kết thúc bằng một loạt câu hỏi mở, tóm tắt trong Bảng~\ref{tab:cauhoimo}.
+
+\begin{table}[H]
+\centering
+\caption{Các câu hỏi mở được nêu trong bài báo.}
+\label{tab:cauhoimo}
+\begin{tabular}{|p{3.6cm}|p{9.6cm}|}
+\hline
+\textbf{Vấn đề} & \textbf{Nội dung} \\ \hline
+Giới hạn với xác suất cao & Chuyển các giới hạn theo kỳ vọng thành giới hạn đúng với xác suất cao cho từng lần huấn luyện. \\ \hline
+Full-batch Gradient Descent & Với hàm không lồi, GD dùng mọi mẫu ở mọi bước nên mẫu khác biệt gây sai lệch ngay từ bước đầu; không có burn-in để tận dụng, nên chưa chứng minh được GD ổn định. \\ \hline
+Momentum và Acceleration & Các phương pháp này hội tụ nhanh hơn nhưng có thể nhạy hơn với từng mẫu dữ liệu; ảnh hưởng của chúng đến Stability chưa được phân tích. \\ \hline
+Chọn mô hình theo tốc độ huấn luyện & Nếu ``train faster'' thì ``generalize better'', có thể chọn kiến trúc và siêu tham số dựa trên tốc độ giảm lỗi huấn luyện. \\ \hline
+Mô hình lớn nhưng huấn luyện nhanh & Làm sao thiết kế mô hình có dung lượng lớn mà vẫn đạt lỗi thấp sau ít bước; Stability có giải thích được việc thêm tham số đôi khi lại giảm lỗi test không. \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Ảnh hưởng của bài báo đến các nghiên cứu sau}
+\label{sec:anhhuong}
+
+Bài báo mở ra một hướng nghiên cứu lớn về Stability của các thuật toán tối ưu. Một số công trình tiêu biểu:
+\begin{itemize}
+    \item \textbf{Zhang và cộng sự (2017)}~\cite{zhang2017understanding}, với hai đồng tác giả của bài báo, cho thấy mạng nơ-ron sâu ghi nhớ (memorize) được cả nhãn ngẫu nhiên. Vì giới hạn Stability không phân biệt nhãn thật và nhãn ngẫu nhiên, đây là bằng chứng rằng Uniform Stability một mình chưa giải thích đầy đủ Generalization của deep learning.
+    \item \textbf{Kuzborskij và Lampert (2018)}~\cite{kuzborskij2018data} đưa ra giới hạn Stability phụ thuộc dữ liệu và điểm khởi tạo, khắc phục một phần hạn chế ``không phụ thuộc dữ liệu''.
+    \item \textbf{Feldman và Vondrák (2019)}~\cite{feldman2019high} chứng minh giới hạn với xác suất cao gần tối ưu cho thuật toán ổn định đều, trả lời phần lớn câu hỏi mở thứ nhất.
+    \item \textbf{Bassily và cộng sự (2020)}~\cite{bassily2020stability} phân tích Stability của SGD cho hàm lồi không trơn, bỏ được giả thiết $\beta$-smooth.
+\end{itemize}
+
+\section{Kết luận của đồ án}
+\label{sec:ketluan-doan}
+
+Đồ án đã trình bày lại toàn bộ nội dung của bài báo: bối cảnh và câu hỏi nghiên cứu (Chương~\ref{chap:tongquan}), các nghiên cứu liên quan (Chương~\ref{chap:relatedwork}), khung lý thuyết Stability và các định lý chính về SGD (Chương~\ref{chap:coso}), sự đánh đổi giữa tối ưu và ổn định trong bài toán lồi (Chương~\ref{chap:convexrisk}), và thực nghiệm (Chương~\ref{chap:thucnghiem}). Chứng minh chi tiết của các kết quả chính được trình bày ở Phụ lục~\ref{app:proofs}.
+
+Bài học chính rút ra là: khả năng tổng quát hóa của một mô hình không chỉ phụ thuộc vào mô hình lớn hay nhỏ, mà còn phụ thuộc vào \emph{cách} mô hình được huấn luyện. Learning rate, số bước huấn luyện và các kỹ thuật điều chuẩn đều tác động trực tiếp đến độ nhạy của thuật toán với từng mẫu dữ liệu, và độ nhạy này kiểm soát Generalization Error.
+
+\textbf{Hướng phát triển của đồ án.} Mở rộng thực nghiệm sang dữ liệu lớn hơn (MNIST, CIFAR-10) với mạng tích chập; kiểm tra lịch learning rate $c/t$ đúng như giả thiết của Định lý~3.8; đo Stability khi dùng momentum hoặc Adam; và lặp lại thực nghiệm nhãn ngẫu nhiên để quan sát giới hạn của cách tiếp cận dựa trên Stability.

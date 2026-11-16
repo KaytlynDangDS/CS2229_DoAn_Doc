@@ -145,7 +145,7 @@ trong đó $G$ là \textit{Gradient Update Rule}, ánh xạ $w_t \mapsto w_{t+1}
     \[
     \|G(v) - G(w)\| \leq \eta \|v - w\|.
     \]
-    Ý nghĩa: nếu $\eta < 1$, khoảng cách giữa hai trạng thái sau khi áp dụng $G$ bị \emph{thu hẹp} (ánh xạ co); nếu $\eta = 1$, khoảng cách \emph{không tăng} (ánh xạ không giãn -- non-expansive); nếu $\eta > 1$, khoảng cách \emph{có thể tăng} lên sau mỗi bước cập nhật. Thuật ngữ $\eta$-expansive ở đây chỉ biểu thị một giới hạn trên đối với tỷ lệ thay đổi khoảng cách giữa hai điểm sau khi áp dụng $G$, không có nghĩa là khoảng cách thực tế luôn tăng lên.
+    Ý nghĩa: nếu $\eta < 1$, khoảng cách giữa hai trạng thái sau khi áp dụng $G$ bị \emph{thu hẹp} (ánh xạ co); nếu $\eta = 1$, khoảng cách \emph{không tăng} (ánh xạ không giãn nở -- non-expansive); nếu $\eta > 1$, khoảng cách \emph{có thể tăng} lên sau mỗi bước cập nhật. Thuật ngữ $\eta$-expansive ở đây chỉ biểu thị một giới hạn trên đối với tỷ lệ thay đổi khoảng cách giữa hai điểm sau khi áp dụng $G$, không có nghĩa là khoảng cách thực tế luôn tăng lên.
     \item \textit{Bounded}: một quy tắc cập nhật $G$ được gọi là $\sigma$-\textit{bounded} nếu với mọi $w$:
     \[
     \|w - G(w)\| \leq \sigma.
@@ -207,7 +207,7 @@ Bằng cách kết hợp xác suất $P = 1/n$ của trường hợp 2 với gi�
 \subsection{Lipschitz và Smoothness}
 \label{subsec:lipschitz-smooth}
 
-Hai giả định toán học sau đóng vai trò then chốt trong việc chứng minh Stability, tương ứng Section~3.2 của bài báo. Hai điều kiện này có vai trò khác nhau và bổ sung cho nhau trong chứng minh: Lipschitz giới hạn độ lớn của gradient, qua đó kiểm soát mức thay đổi của tham số trong \emph{một bước cập nhật}; trong khi Smoothness kiểm soát mức độ thay đổi của chính gradient khi tham số thay đổi, qua đó quyết định quy tắc cập nhật có phải là ánh xạ không giãn (non-expansive) hay không.
+Hai giả định toán học sau đóng vai trò then chốt trong việc chứng minh Stability, tương ứng Section~3.2 của bài báo. Hai điều kiện này có vai trò khác nhau và bổ sung cho nhau trong chứng minh: Lipschitz giới hạn độ lớn của gradient, qua đó kiểm soát mức thay đổi của tham số trong \emph{một bước cập nhật}; trong khi Smoothness kiểm soát mức độ thay đổi của chính gradient khi tham số thay đổi, qua đó quyết định quy tắc cập nhật có phải là ánh xạ không giãn nở (non-expansive) hay không.
 
 \textbf{A. Lipschitz Continuity.} \textbf{Định nghĩa 3.2.} Hàm $f(\cdot; z)$ được gọi là $L$-Lipschitz nếu với mọi $u, v$:
 \[
@@ -223,7 +223,7 @@ khi $f$ khả vi trên miền đang xét, điều kiện này tương đương v
 \[
 \|\nabla f(u) - \nabla f(v)\| \leq \beta \|u - v\|.
 \]
-Ý nghĩa: gradient của hàm mất mát không thay đổi quá nhanh khi tham số thay đổi. Kết hợp với tính lồi và learning rate đủ nhỏ ($\alpha \le 2/\beta$), Smoothness giúp quy tắc cập nhật gradient $G(w) = w - \alpha \nabla f(w)$ trở thành một ánh xạ không giãn (non-expansive, $\eta \le 1$); tuy nhiên, một mình Smoothness không đảm bảo tính không giãn này khi hàm mất mát không lồi, như sẽ thấy ở Bổ đề~3.6.
+Ý nghĩa: gradient của hàm mất mát không thay đổi quá nhanh khi tham số thay đổi. Kết hợp với tính lồi và learning rate đủ nhỏ ($\alpha \le 2/\beta$), Smoothness giúp quy tắc cập nhật gradient $G(w) = w - \alpha \nabla f(w)$ trở thành một ánh xạ không giãn nở (non-expansive, $\eta \le 1$); tuy nhiên, một mình Smoothness không đảm bảo tính không giãn nở này khi hàm mất mát không lồi, như sẽ thấy ở Bổ đề~3.6.
 
 \textbf{C. Strong Convexity.} \textbf{Định nghĩa 3.4.} Hàm $f(\cdot; z)$ được gọi là $\gamma$-\textit{strongly convex} nếu với mọi $u, v$:
 \[
@@ -242,7 +242,7 @@ Bảng~\ref{tab:vaitro-dieukien} tóm tắt vai trò của bốn điều kiện 
 \textbf{Điều kiện} & \textbf{Vai trò trong chứng minh} \\ \hline
 Lipschitz & Kiểm soát độ lớn gradient, qua đó kiểm soát mức thay đổi tham số (và Loss) trong một bước cập nhật. \\ \hline
 Smoothness & Kiểm soát mức thay đổi của gradient khi tham số thay đổi. \\ \hline
-Convexity & Giúp quy tắc cập nhật gradient trở thành ánh xạ không giãn khi kết hợp với Smoothness, qua đó kiểm soát khoảng cách giữa hai quỹ đạo cập nhật. \\ \hline
+Convexity & Giúp quy tắc cập nhật gradient trở thành ánh xạ không giãn nở khi kết hợp với Smoothness, qua đó kiểm soát khoảng cách giữa hai quỹ đạo cập nhật. \\ \hline
 Strong Convexity & Điều kiện mạnh hơn Convexity, có thể tạo tính co (khoảng cách giữa hai quỹ đạo giảm dần) cho quy tắc cập nhật. \\ \hline
 \end{tabular}
 \end{table}

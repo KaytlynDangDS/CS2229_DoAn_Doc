@@ -1,0 +1,135 @@
+\chapter{Tối thiểu hóa rủi ro lồi: đánh đổi giữa tối ưu và ổn định}
+\label{chap:convexrisk}
+
+Chương~\ref{chap:coso} đã chỉ ra rằng SGD càng chạy lâu thì giới hạn Stability càng lớn. Tuy nhiên, huấn luyện quá ngắn thì mô hình chưa kịp giảm lỗi trên tập huấn luyện. Chương này trình bày Section~5 của bài báo~\cite{hardt2016train}: ghép giới hạn Stability với giới hạn sai số tối ưu để thấy rõ sự đánh đổi giữa hai đại lượng, và chứng minh rằng trong bài toán lồi, SGD chạy nhiều epoch vẫn đạt mức Population Risk gần với kết quả kinh điển chỉ dùng mỗi mẫu một lần.
+
+\section{Phân rã Population Risk}
+\label{sec:phanra}
+
+Gọi $w_\star^S = \arg\min_w R_S(w)$ là nghiệm tốt nhất trên tập huấn luyện và $w_\star = \arg\min_w R(w)$ là nghiệm tốt nhất trên phân phối thực. Với một bộ tham số $w$ do thuật toán trả về, bài báo định nghĩa \textit{sai số tối ưu} (optimization error):
+\[
+\epsilon_{\mathrm{opt}}(w) = \mathbb{E}\left[R_S(w) - R_S(w_\star^S)\right],
+\]
+tức là mức Empirical Risk mà thuật toán còn cách nghiệm tốt nhất trên tập huấn luyện.
+
+Áp dụng Định lý~2.2 cho $\epsilon_{\mathrm{stab}}$, ta có $\mathbb{E}[R(w)] \le \mathbb{E}[R_S(w)] + \epsilon_{\mathrm{stab}}$. Cộng và trừ $\mathbb{E}[R_S(w_\star^S)]$ ở vế phải, ta được phân rã:
+\[
+\boxed{
+\mathbb{E}\left[R(w)\right] \;\le\; \underbrace{\mathbb{E}\left[R_S(w_\star^S)\right]}_{\text{tốt nhất có thể trên } S} \;+\; \underbrace{\epsilon_{\mathrm{opt}}(w)}_{\text{giảm khi huấn luyện lâu}} \;+\; \underbrace{\epsilon_{\mathrm{stab}}}_{\text{tăng khi huấn luyện lâu}}.
+}
+\]
+
+Ý nghĩa của từng thành phần:
+\begin{itemize}
+    \item $\mathbb{E}[R_S(w_\star^S)]$ không phụ thuộc vào thuật toán: đây là mức lỗi tốt nhất mà bất kỳ thuật toán nào cũng không thể vượt qua trên tập $S$.
+    \item $\epsilon_{\mathrm{opt}}$ giảm khi số bước $T$ tăng, vì thuật toán tiến gần hơn đến nghiệm tối ưu.
+    \item $\epsilon_{\mathrm{stab}}$ tăng khi $T$ tăng (Định lý~3.7: tỉ lệ với $\sum_t \alpha_t$).
+\end{itemize}
+Vì hai thành phần cuối thay đổi ngược chiều theo $T$, tồn tại một số bước huấn luyện tốt nhất nằm ở giữa. Đây là cơ sở lý thuyết cho kỹ thuật Early Stopping đã nhắc đến ở Chương~\ref{chap:relatedwork}.
+
+\textbf{Bổ đề 5.1.} $\mathbb{E}\left[R_S(w_\star^S)\right] \le R(w_\star)$.
+
+\textit{Chứng minh.} Với mọi tập $S$, vì $w_\star^S$ là nghiệm tối thiểu của $R_S$ nên $R_S(w_\star^S) \le R_S(w_\star)$. Lấy kỳ vọng hai vế theo $S$. Do $w_\star$ là một bộ tham số cố định, không phụ thuộc $S$, nên $\mathbb{E}_S[R_S(w_\star)] = \frac{1}{n}\sum_i \mathbb{E}_{z_i}[f(w_\star; z_i)] = R(w_\star)$. Ghép hai điều trên ta có điều phải chứng minh. $\square$
+
+Bổ đề~5.1 cho phép thay số hạng đầu của phân rã bằng $R(w_\star)$, mức lỗi tốt nhất trên phân phối thực. Khi đó $\epsilon_{\mathrm{opt}} + \epsilon_{\mathrm{stab}}$ chính là \textit{excess risk}: mô hình thu được kém mô hình tốt nhất bao nhiêu.
+
+\section{Kết quả kinh điển của Nemirovski và Yudin}
+\label{sec:nemirovski}
+
+Để có giới hạn cho $\epsilon_{\mathrm{opt}}$, bài báo sử dụng kết quả kinh điển về SGD với hàm lồi của Nemirovski và Yudin~\cite{nemirovski1983problem}.
+
+\textbf{Định lý 5.2 (Nemirovski--Yudin).} Giả sử hàm mất mát lồi, gradient bị chặn $\|\nabla f\| \le L$, điểm khởi tạo thỏa $\|w_0 - w_\star\| \le D$, SGD chạy $T$ bước với learning rate cố định $\alpha$, mỗi bước dùng một mẫu mới lấy độc lập từ $\mathcal{D}$, và $\bar w_T = \frac{1}{T}\sum_{t=1}^{T} w_t$ là trung bình các iterate. Khi đó:
+\[
+\boxed{
+\mathbb{E}\left[R(\bar w_T)\right] \le R(w_\star) + \frac{D^2}{2T\alpha} + \frac{L^2 \alpha}{2}.
+}
+\]
+
+Hai số hạng của giới hạn có ý nghĩa đối lập: $\frac{D^2}{2T\alpha}$ là phần ``chưa đi tới nơi'' (giảm khi bước lớn hoặc chạy lâu), còn $\frac{L^2\alpha}{2}$ là phần ``dao động quanh nghiệm'' do nhiễu của gradient ngẫu nhiên (giảm khi bước nhỏ).
+
+\textbf{Hệ quả 5.3 (một lượt qua dữ liệu).} Nếu mỗi mẫu trong $S$ chỉ được dùng đúng một lần ($T = n$) và chọn $\alpha = \frac{D}{L\sqrt{n}}$, thì
+\[
+\boxed{
+\mathbb{E}\left[R(\bar w_n)\right] \le R(w_\star) + \frac{DL}{\sqrt{n}}.
+}
+\]
+
+\textit{Chứng minh.} Khi mỗi mẫu chỉ dùng một lần, mỗi bước cập nhật nhận một mẫu mới chưa từng thấy, đúng với giả thiết của Định lý~5.2. Thay $T = n$ và $\alpha = \frac{D}{L\sqrt{n}}$:
+\[
+\frac{D^2}{2n\alpha} + \frac{L^2\alpha}{2} = \frac{D^2 L\sqrt{n}}{2nD} + \frac{L^2 D}{2L\sqrt{n}} = \frac{DL}{2\sqrt{n}} + \frac{DL}{2\sqrt{n}} = \frac{DL}{\sqrt{n}}. \qquad \square
+\]
+
+\textbf{Giới hạn của kết quả kinh điển.} Lập luận trên chỉ đúng khi $T \le n$. Nếu chạy nhiều epoch ($T > n$), một mẫu được dùng lại nhiều lần, các bước cập nhật không còn nhận mẫu mới độc lập, và Định lý~5.2 không còn áp dụng trực tiếp cho Population Risk $R$. Trong khi đó, thực tế huấn luyện gần như luôn chạy nhiều epoch. Đây là khoảng trống mà Stability lấp được.
+
+\section{Huấn luyện nhiều epoch: kết hợp tối ưu và ổn định}
+\label{sec:nhieuepoch}
+
+Ý tưởng của bài báo: thay vì áp dụng Định lý~5.2 cho $R$, áp dụng nó cho $R_S$. Khi SGD chọn mẫu ngẫu nhiên đều từ $S$, mỗi bước là một bước SGD hợp lệ trên phân phối đều của $S$, nên Định lý~5.2 cho giới hạn $\epsilon_{\mathrm{opt}}$ đúng với mọi $T$. Phần chênh lệch giữa $R_S$ và $R$ được chặn bằng Stability.
+
+Bài báo cần thêm một giới hạn Stability cho trung bình các iterate $\bar w_T$ (bản đầy đủ của bài báo trình bày kết quả này như một thao tác làm tăng Stability).
+
+\textbf{Bổ đề (Stability của trung bình iterate).} Với hàm mất mát lồi, $L$-Lipschitz, $\beta$-smooth và learning rate cố định $\alpha \le 2/\beta$, trung bình các iterate $\bar w_T$ thỏa
+\[
+\epsilon_{\mathrm{stab}} \le \frac{\alpha (T+1) L^2}{n} \approx \frac{\alpha T L^2}{n}.
+\]
+
+\textit{Chứng minh.} Chạy SGD song song trên $S$ và $S'$ như trong chứng minh Định lý~3.7. Nếu mẫu khác biệt được chọn ở bước $t$, cú đẩy lệch tối đa $2\alpha L$ chỉ ảnh hưởng đến các iterate $w_t, w_{t+1}, \ldots, w_T$, nghĩa là $T - t + 1$ trên $T$ số hạng của trung bình. Vì cập nhật là non-expansive (Bổ đề~3.6), độ lệch không phình to sau đó. Lấy kỳ vọng với xác suất $1/n$ mỗi bước:
+\[
+\mathbb{E}\,\|\bar w_T - \bar w_T'\| \le \sum_{t=1}^{T} \frac{1}{n}\cdot 2\alpha L \cdot \frac{T-t+1}{T} = \frac{2\alpha L}{nT}\cdot\frac{T(T+1)}{2} = \frac{\alpha L (T+1)}{n}.
+\]
+Nhân với $L$ theo tính Lipschitz. So với Định lý~3.7 ($2\alpha T L^2/n$), hằng số giảm gần một nửa, vì một cú đẩy xảy ra muộn chỉ ảnh hưởng đến phần nhỏ của trung bình. $\square$
+
+\textbf{Mệnh đề 5.4.} Với hàm mất mát lồi, $L$-Lipschitz, $\beta$-smooth, $\|w_0 - w_\star^S\| \le D$, SGD chạy $T$ bước (có thể $T > n$) với learning rate cố định
+\[
+\alpha = \frac{D\sqrt{n}}{L\sqrt{T(n+2T)}},
+\]
+trung bình các iterate thỏa
+\[
+\boxed{
+\mathbb{E}\left[R(\bar w_T)\right] \le \mathbb{E}\left[R_S(w_\star^S)\right] + \frac{DL}{\sqrt{n}}\sqrt{\frac{n + 2T}{T}}.
+}
+\]
+
+\textit{Chứng minh.}
+\begin{enumerate}
+    \item Áp dụng Định lý~5.2 cho $R_S$: $\epsilon_{\mathrm{opt}} \le \dfrac{D^2}{2T\alpha} + \dfrac{L^2\alpha}{2}$.
+    \item Theo bổ đề trên: $\epsilon_{\mathrm{stab}} \le \dfrac{T L^2 \alpha}{n}$.
+    \item Cộng hai giới hạn vào phân rã ở Mục~\ref{sec:phanra}:
+    \[
+    \epsilon_{\mathrm{opt}} + \epsilon_{\mathrm{stab}} \le \underbrace{\frac{D^2}{2T}}_{a}\cdot\frac{1}{\alpha} + \underbrace{\frac{L^2}{2}\left(1 + \frac{2T}{n}\right)}_{b}\cdot\alpha.
+    \]
+    \item Biểu thức $a/\alpha + b\alpha$ đạt giá trị nhỏ nhất $2\sqrt{ab}$ tại $\alpha = \sqrt{a/b}$ (bất đẳng thức AM--GM). Tính trực tiếp:
+    \[
+    \sqrt{\frac{a}{b}} = \frac{D}{L}\sqrt{\frac{1}{T(1 + 2T/n)}} = \frac{D\sqrt{n}}{L\sqrt{T(n+2T)}},
+    \]
+    \[
+    2\sqrt{ab} = DL\sqrt{\frac{1 + 2T/n}{T}} = \frac{DL}{\sqrt{n}}\sqrt{\frac{n + 2T}{T}}. \qquad \square
+    \]
+\end{enumerate}
+
+\section{Ý nghĩa của Mệnh đề 5.4}
+\label{sec:ynghia54}
+
+So sánh với Hệ quả~5.3 (một lượt qua dữ liệu, $DL/\sqrt{n}$), hệ số nhân thêm là $\sqrt{(n+2T)/T}$. Bảng~\ref{tab:menhde54} cho giá trị của hệ số này tại một số số bước tiêu biểu.
+
+\begin{table}[H]
+\centering
+\caption{Excess risk theo Mệnh đề 5.4, so với kết quả một lượt qua dữ liệu.}
+\label{tab:menhde54}
+\begin{tabular}{|p{3.5cm}|p{3.8cm}|p{5.6cm}|}
+\hline
+\textbf{Số bước $T$} & \textbf{Excess risk} & \textbf{So với $DL/\sqrt{n}$} \\ \hline
+$T = n$ (1 epoch) & $\sqrt{3}\,\dfrac{DL}{\sqrt{n}}$ & Kém tối đa $\sqrt{3} \approx 1{,}73$ lần \\ \hline
+$T = 10n$ (10 epoch) & $\sqrt{2{,}1}\,\dfrac{DL}{\sqrt{n}}$ & Kém tối đa $\approx 1{,}45$ lần \\ \hline
+$T \to \infty$ & $\sqrt{2}\,\dfrac{DL}{\sqrt{n}}$ & Kém tối đa $\sqrt{2} \approx 1{,}41$ lần \\ \hline
+\end{tabular}
+\end{table}
+
+Có ba nhận xét quan trọng:
+\begin{enumerate}
+    \item \textbf{Nhiều epoch không làm hỏng Generalization trong bài toán lồi}, miễn là learning rate được chọn phù hợp. Giới hạn chỉ kém kết quả một lượt qua dữ liệu một hằng số nhỏ, không phụ thuộc $T$. Trước bài báo này, lý thuyết kinh điển không nói được gì cho trường hợp $T > n$.
+    \item \textbf{Learning rate tối ưu giảm khi $T$ tăng.} Khi $T \gg n$, $\alpha \approx \dfrac{D\sqrt{n}}{\sqrt{2}\,L\,T}$, nên tích $\alpha T \approx \dfrac{D\sqrt{n}}{\sqrt{2}L}$ gần như không đổi. Điều quyết định Stability là ``tổng quãng đường'' $\alpha T$, không phải số epoch: chạy nhiều epoch an toàn khi learning rate giảm tương ứng.
+    \item \textbf{Ví dụ số.} Với $D = L = 1$ và $n = 10\,000$: một lượt qua dữ liệu cho excess risk $0{,}01$; chạy đúng 1 epoch có dùng lại mẫu cho $\sqrt{3}\times 0{,}01 \approx 0{,}017$ với $\alpha = 1/\sqrt{3n} \approx 0{,}0058$; chạy rất lâu cho $\approx 0{,}014$.
+\end{enumerate}
+
+Phân tích này chỉ áp dụng cho hàm mất mát lồi, nơi Định lý~5.2 có sẵn. Với hàm không lồi, không có giới hạn tương tự cho $\epsilon_{\mathrm{opt}}$, nên bài báo không đưa ra kết quả tương ứng; phần này là một trong các câu hỏi mở được nêu ở Chương~\ref{chap:ketluan}.
