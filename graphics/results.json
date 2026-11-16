@@ -1,0 +1,79 @@
+{
+  "convex": {
+    "0.025": {
+      "delta_final": 0.14574523081162827,
+      "delta_epoch10": 0.08733950823123837,
+      "gap_loss_final": 0.04225708616116314,
+      "gap_err_final": 0.017237185929648242,
+      "train_err_final": 0.020200000000000003,
+      "test_err_final": 0.037437185929648245
+    },
+    "0.05": {
+      "delta_final": 0.2018986754281055,
+      "delta_epoch10": 0.11874067239367347,
+      "gap_loss_final": 0.0555197066220248,
+      "gap_err_final": 0.024775879396984925,
+      "train_err_final": 0.010400000000000001,
+      "test_err_final": 0.035175879396984924
+    },
+    "0.1": {
+      "delta_final": 0.28913898343927025,
+      "delta_epoch10": 0.16392570240490048,
+      "gap_loss_final": 0.07038965401071508,
+      "gap_err_final": 0.029832160804020104,
+      "train_err_final": 0.0066,
+      "test_err_final": 0.0364321608040201
+    }
+  },
+  "nonconvex": {
+    "0.025": {
+      "delta_final": 0.17082025629717,
+      "delta_epoch10": 0.11926974729632087,
+      "gap_loss_final": 0.07268053134034705,
+      "gap_err_final": 0.025228140703517588,
+      "train_err_final": 0.0004,
+      "test_err_final": 0.02562814070351759
+    },
+    "0.05": {
+      "delta_final": 0.2287139369766396,
+      "delta_epoch10": 0.19195925407842784,
+      "gap_loss_final": 0.07225510306187219,
+      "gap_err_final": 0.02135678391959799,
+      "train_err_final": 0.0,
+      "test_err_final": 0.02135678391959799
+    },
+    "0.1": {
+      "delta_final": 8.12184228398863,
+      "delta_epoch10": 7.407827448205543,
+      "gap_loss_final": 0.07699063807089226,
+      "gap_err_final": 0.01934673366834171,
+      "train_err_final": 0.0,
+      "test_err_final": 0.01934673366834171
+    }
+  },
+  "corr_delta_gaploss_mlp_0.05": 0.9283971061460182,
+  "burnin": {
+    "first": {
+      "delta_epoch1": 0.20119807183894944,
+      "delta_epoch10": 0.4408415889955716
+    },
+    "last": {
+      "delta_epoch1": 0.16566557426199965,
+      "delta_epoch10": 0.18849982731574497
+    }
+  },
+  "weight_decay": {
+    "0.0": {
+      "delta_final": 0.2287139369766396,
+      "gap_loss_final": 0.07225510306187219,
+      "train_err_final": 0.0,
+      "test_err_final": 0.02135678391959799
+    },
+    "0.01": {
+      "delta_final": 0.1152949828210966,
+      "gap_loss_final": 0.020996591684763255,
+      "train_err_final": 0.05800000000000001,
+      "test_err_final": 0.06984924623115578
+    }
+  }
+}
