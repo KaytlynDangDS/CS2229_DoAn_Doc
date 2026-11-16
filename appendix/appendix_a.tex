@@ -1,4 +1,149 @@
-\chapter{Công bố Khoa học}
-[1]
+\chapter{Chứng minh chi tiết các kết quả chính}
+\label{app:proofs}
 
-[2]
+Phụ lục này trình bày chứng minh của các kết quả đã phát biểu ở Chương~\ref{chap:coso}, theo đúng số hiệu trong bài báo~\cite{hardt2016train}. Ký hiệu: $S$ và $S'$ là hai tập dữ liệu kích thước $n$ khác nhau đúng một mẫu; $w_t, w'_t$ là tham số sau $t$ bước SGD trên $S$ và $S'$; $\delta_t = \|w_t - w'_t\|$.
+
+\section{Định lý 2.2: Stability suy ra Generalization}
+
+\textit{Chứng minh.} Lấy hai tập độc lập cùng phân phối $S = (z_1, \ldots, z_n)$ và $S' = (z'_1, \ldots, z'_n)$. Gọi $S^{(i)} = (z_1, \ldots, z_{i-1}, z'_i, z_{i+1}, \ldots, z_n)$ là tập $S$ sau khi thay $z_i$ bằng $z'_i$.
+
+\textbf{Bước 1 (Empirical Risk).} Vì $z_i$ và $z'_i$ có cùng phân phối và cùng độc lập với các mẫu còn lại, đổi tên hai biến này không làm thay đổi kỳ vọng:
+\[
+\mathbb{E}_{S,A}\left[f(A(S); z_i)\right] = \mathbb{E}_{S,S',A}\left[f(A(S^{(i)}); z'_i)\right].
+\]
+Lấy trung bình theo $i$:
+\[
+\mathbb{E}_{S,A}\left[R_S(A(S))\right] = \mathbb{E}_{S,S',A}\left[\frac{1}{n}\sum_{i=1}^{n} f(A(S^{(i)}); z'_i)\right].
+\]
+
+\textbf{Bước 2 (Population Risk).} Mẫu $z'_i$ độc lập với $S$, nên đối với mô hình $A(S)$, $z'_i$ là một mẫu mới lấy từ $\mathcal{D}$:
+\[
+\mathbb{E}_{S,A}\left[R(A(S))\right] = \mathbb{E}_{S,S',A}\left[\frac{1}{n}\sum_{i=1}^{n} f(A(S); z'_i)\right].
+\]
+
+\textbf{Bước 3.} Trừ hai đẳng thức:
+\[
+\mathbb{E}_{S,A}\left[R_S(A(S)) - R(A(S))\right] = \mathbb{E}_{S,S'}\left[\frac{1}{n}\sum_{i=1}^{n} \mathbb{E}_A\left[f(A(S^{(i)}); z'_i) - f(A(S); z'_i)\right]\right].
+\]
+Với mỗi $i$, $S$ và $S^{(i)}$ khác nhau đúng một mẫu, nên theo Định nghĩa~2.1 số hạng bên trong có trị tuyệt đối không quá $\epsilon$. Trung bình của $n$ số hạng như vậy cũng không quá $\epsilon$. $\square$
+
+\textit{Ý nghĩa.} Đối với mô hình $A(S^{(i)})$, mẫu $z'_i$ là mẫu đã thấy khi huấn luyện; đối với $A(S)$, nó là mẫu chưa thấy. Generalization Gap chính là lợi thế của việc ``đã thấy'' mẫu, và Stability nói rằng lợi thế này nhỏ.
+
+\section{Bổ đề 2.4: Growth Recursion}
+
+\textit{Chứng minh.} Viết gọn $w = w_t$, $w' = w'_t$, $\delta = \delta_t$, $G = G_t$, $G' = G'_t$.
+
+\textbf{Trường hợp 1} ($G = G'$, $\eta$-expansive). Theo định nghĩa: $\delta_{t+1} = \|G(w) - G(w')\| \le \eta\|w - w'\| = \eta\delta$.
+
+\textbf{Trường hợp 2} ($G, G'$ là $\sigma$-bounded, $G$ là $\eta$-expansive). Dùng bất đẳng thức tam giác theo hai cách.
+
+Cách thứ nhất, chèn $w$ và $w'$ vào giữa:
+\[
+\|G(w) - G'(w')\| \le \|G(w) - w\| + \|w - w'\| + \|w' - G'(w')\| \le \sigma + \delta + \sigma = \delta + 2\sigma.
+\]
+Cách thứ hai, chèn $G(w')$ và $w'$ vào giữa:
+\[
+\begin{aligned}
+\|G(w) - G'(w')\| &\le \|G(w) - G(w')\| + \|G(w') - w'\| + \|w' - G'(w')\| \\
+&\le \eta\delta + \sigma + \sigma = \eta\delta + 2\sigma.
+\end{aligned}
+\]
+Hai cận đều đúng nên $\delta_{t+1} \le \min(\eta, 1)\,\delta + 2\sigma$. $\square$
+
+\section{Bổ đề 3.3 và Bổ đề 3.6: tính chất của bước gradient}
+
+\textbf{Bổ đề 3.3.} Nếu $f$ là $L$-Lipschitz thì $G(w) = w - \alpha\nabla f(w)$ là $(\alpha L)$-bounded, vì $\|w - G(w)\| = \alpha\|\nabla f(w)\| \le \alpha L$. $\square$
+
+\textbf{Bổ đề 3.6, ý 1 ($f$ là $\beta$-smooth).} Với mọi $v, w$:
+\[
+\begin{aligned}
+\|G(v) - G(w)\| &= \|(v - w) - \alpha(\nabla f(v) - \nabla f(w))\| \\
+&\le \|v - w\| + \alpha\beta\|v - w\| = (1 + \alpha\beta)\|v - w\|. \qquad \square
+\end{aligned}
+\]
+
+\textbf{Bổ đề 3.6, ý 2 ($f$ lồi, $\beta$-smooth, $\alpha \le 2/\beta$).} Đặt $g = \nabla f(v) - \nabla f(w)$. Với hàm lồi và $\beta$-smooth, gradient có tính co-coercive (định lý Baillon--Haddad~\cite{nesterov2004introductory}):
+\[
+\langle g, v - w\rangle \ge \frac{1}{\beta}\|g\|^2.
+\]
+Khai triển bình phương và dùng bất đẳng thức trên:
+\[
+\|G(v) - G(w)\|^2 = \|v - w\|^2 - 2\alpha\langle g, v - w\rangle + \alpha^2\|g\|^2 \le \|v - w\|^2 - \alpha\left(\frac{2}{\beta} - \alpha\right)\|g\|^2.
+\]
+Khi $\alpha \le 2/\beta$, số hạng cuối không âm nên $\|G(v) - G(w)\| \le \|v - w\|$. $\square$
+
+\textit{Ví dụ một chiều.} Với $f(w) = \frac{k}{2}w^2$, $G(w) = (1 - \alpha k)w$ nên hệ số giãn nở đúng bằng $|1 - \alpha k|$. Nếu $k = -\beta$ (hàm lõm, không lồi) thì hệ số là $1 + \alpha\beta$: cận của ý 1 xảy ra thật. Nếu $k = \beta$ (loss lồi) nhưng $\alpha > 2/\beta$ thì hệ số $\alpha\beta - 1 > 1$: bước quá dài làm hai điểm nhảy qua đáy và xa nhau hơn, nên điều kiện $\alpha \le 2/\beta$ là cần thiết.
+
+\section{Định lý 3.7: trường hợp lồi}
+
+\textit{Chứng minh.} Chạy SGD trên $S$ và $S'$ với cùng điểm khởi tạo và cùng dãy chỉ số $i_1, i_2, \ldots$ (coupling). Theo Bổ đề~3.6, mỗi bước gradient là $1$-expansive; theo Bổ đề~3.3, mỗi bước là $(\alpha_t L)$-bounded.
+
+Ở bước $t$:
+\begin{itemize}
+    \item Với xác suất $1 - 1/n$, chỉ số được chọn trỏ đến mẫu chung, hai bên dùng cùng quy tắc cập nhật: $\delta_{t+1} \le \delta_t$.
+    \item Với xác suất $1/n$, chỉ số trỏ đến mẫu khác biệt: $\delta_{t+1} \le \delta_t + 2\alpha_t L$.
+\end{itemize}
+Chỉ số $i_t$ được chọn độc lập với quá khứ, nên lấy kỳ vọng:
+\[
+\mathbb{E}[\delta_{t+1}] \le \left(1 - \frac{1}{n}\right)\mathbb{E}[\delta_t] + \frac{1}{n}\left(\mathbb{E}[\delta_t] + 2\alpha_t L\right) = \mathbb{E}[\delta_t] + \frac{2\alpha_t L}{n}.
+\]
+Cộng dồn từ $\delta_0 = 0$: $\mathbb{E}[\delta_T] \le \dfrac{2L}{n}\sum_{t=1}^{T}\alpha_t$. Cuối cùng, vì $f$ là $L$-Lipschitz, với mọi $z$:
+\[
+\mathbb{E}\left|f(w_T; z) - f(w'_T; z)\right| \le L\,\mathbb{E}[\delta_T] \le \frac{2L^2}{n}\sum_{t=1}^{T}\alpha_t. \qquad \square
+\]
+
+\section{Định lý 3.8: trường hợp không lồi}
+
+Chứng minh gồm bốn bước. Ký hiệu $q = \beta c$.
+
+\textbf{Bước 1: burn-in.} Gọi $E$ là biến cố hai quỹ đạo vẫn trùng nhau sau $t_0$ bước ($\delta_{t_0} = 0$). Tách kỳ vọng theo $E$ và phần bù $E^c$:
+\begin{itemize}
+    \item Trên $E$: theo tính Lipschitz, độ lệch loss không quá $L\,\delta_T$.
+    \item Trên $E^c$: vì $f \in [0, 1]$, độ lệch loss không quá $1$.
+\end{itemize}
+Hai quỹ đạo chỉ tách nhau khi SGD chọn trúng mẫu khác biệt, mỗi bước với xác suất $1/n$, nên $\mathbb{P}(E^c) \le t_0/n$. Vậy với mọi $t_0 \in \{0, \ldots, n\}$:
+\[
+\mathbb{E}\left|f(w_T; z) - f(w'_T; z)\right| \le \frac{t_0}{n} + L\,\mathbb{E}\left[\delta_T \mid \delta_{t_0} = 0\right].
+\]
+Ý nghĩa: ta ``mua bảo hiểm'' cho $t_0$ bước đầu, khi learning rate còn lớn, với giá $t_0/n$.
+
+\textbf{Bước 2: đệ quy sau $t_0$.} Đặt $\Delta_t = \mathbb{E}[\delta_t \mid \delta_{t_0} = 0]$. Với $t \ge t_0$, bước cùng mẫu là $(1 + \alpha_t\beta)$-expansive (Bổ đề~3.6); bước khác mẫu dùng nhánh $\min(\eta, 1) = 1$ của Bổ đề~2.4. Do đó, dùng $\alpha_t \le c/t$ và $1 + x \le e^x$:
+\[
+\Delta_{t+1} \le \left(1 - \frac{1}{n}\right)(1 + \alpha_t\beta)\Delta_t + \frac{1}{n}\Delta_t + \frac{2\alpha_t L}{n} \le \exp\left(\left(1 - \frac{1}{n}\right)\frac{c\beta}{t}\right)\Delta_t + \frac{2cL}{tn}.
+\]
+
+\textbf{Bước 3: giải đệ quy.} Đặt $q' = (1 - 1/n)\beta c$. Một sai lệch sinh ra ở bước $t$ bị nhân đến bước $T$ bởi
+\[
+\prod_{s=t+1}^{T}\exp\left(\frac{q'}{s}\right) = \exp\left(q'\sum_{s=t+1}^{T}\frac{1}{s}\right) \le \exp\left(q'\ln\frac{T}{t}\right) = \left(\frac{T}{t}\right)^{q'}.
+\]
+Đây là điểm mấu chốt: tổng điều hòa $\sum 1/s$ chỉ tăng như $\ln T$, nên với learning rate giảm như $c/t$, sai lệch chỉ tăng theo đa thức thay vì theo hàm mũ $e^{\alpha\beta T}$ như khi learning rate cố định. Trải đệ quy từ $\Delta_{t_0} = 0$ và chặn tổng bằng tích phân:
+\[
+\begin{aligned}
+\Delta_T &\le \sum_{t=t_0+1}^{T}\frac{2cL}{tn}\left(\frac{T}{t}\right)^{q'} \le \frac{2cL}{n}T^{q'}\int_{t_0}^{\infty} t^{-q'-1}\,dt \\
+&= \frac{2cL}{n q'}\left(\frac{T}{t_0}\right)^{q'} = \frac{2L}{\beta(n-1)}\left(\frac{T}{t_0}\right)^{q'},
+\end{aligned}
+\]
+vì $n q' = (n-1)\beta c$. Do $T/t_0 \ge 1$ và $q' \le q$, ta có thể thay $q'$ bằng $q$.
+
+\textbf{Bước 4: chọn $t_0$.} Ghép Bước 1 và Bước 3:
+\[
+\epsilon_{\mathrm{stab}} \le \frac{t_0}{n} + \frac{2L^2}{\beta(n-1)}\left(\frac{T}{t_0}\right)^{q}.
+\]
+Số hạng đầu tăng theo $t_0$, số hạng sau giảm theo $t_0$. Cho đạo hàm theo $t_0$ bằng $0$ được (bỏ qua hệ số $n/(n-1) \approx 1$)
+\[
+t_0 = (2cL^2)^{\frac{1}{q+1}}\,T^{\frac{q}{q+1}}.
+\]
+Tại giá trị này, số hạng thứ hai bằng $t_0/(q(n-1))$, nên
+\[
+\epsilon_{\mathrm{stab}} \le \frac{1 + 1/q}{n-1}\,t_0 = \frac{1 + 1/(\beta c)}{n-1}\,(2cL^2)^{\frac{1}{\beta c+1}}\,T^{\frac{\beta c}{\beta c+1}}. \qquad \square
+\]
+
+\textit{Nhận xét.} Bổ đề burn-in chỉ cho phép $t_0 \le n$. Điều kiện $t_0 \le n$ tương đương với $T \lesssim n^{1 + 1/(\beta c)}$ (bỏ qua hằng số): đây là số bước tối đa mà giới hạn còn có ý nghĩa. Khi $\beta c = 1$, có thể huấn luyện khoảng $n^2$ bước, tức khoảng $n$ epoch; khi $\beta c = 10$, chỉ khoảng $n^{0{,}1}$ epoch.
+
+\section{Bổ đề 4.2: Weight Decay}
+
+Quy tắc cập nhật có weight decay hệ số $\mu$ là $G(w) = (1 - \alpha\mu)w - \alpha\nabla f(w)$. Với $f$ là $\beta$-smooth:
+\[
+\|G(v) - G(w)\| \le (1 - \alpha\mu)\|v - w\| + \alpha\|\nabla f(v) - \nabla f(w)\| \le \bigl(1 + \alpha(\beta - \mu)\bigr)\|v - w\|. \qquad \square
+\]
+Kết quả này đúng cả khi $f$ không lồi: mọi định lý phụ thuộc $\beta$ được giữ nguyên với $\beta$ thay bằng $\beta - \mu$, và khi $\mu > \beta$ quy tắc cập nhật trở thành ánh xạ co.

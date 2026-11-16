@@ -1,1 +1,47 @@
-\chapter{Phụ lục B}
+\chapter{Mã nguồn thực nghiệm}
+\label{app:code}
+
+Toàn bộ thực nghiệm ở Mục~\ref{sec:thucnghiem-nhom} nằm trong tệp\\ \texttt{code/stability\_experiments.py}. Chương trình chỉ dùng NumPy, scikit-learn và Matplotlib, không cần GPU và chạy xong trong khoảng một phút:
+\begin{center}
+\texttt{python code/stability\_experiments.py}
+\end{center}
+Kết quả gồm các hình \texttt{graphics/exp\_*.pdf} dùng trong Chương~\ref{chap:thucnghiem} và tệp số liệu \texttt{graphics/results.json}.
+
+\section{Cấu trúc chương trình}
+
+\begin{table}[H]
+\centering
+\caption{Các thành phần chính của chương trình thực nghiệm.}
+\label{tab:code}
+\begin{tabular}{|p{3.6cm}|p{9.6cm}|}
+\hline
+\textbf{Hàm / lớp} & \textbf{Chức năng} \\ \hline
+\texttt{load\_data} & Tải bộ chữ số $8\times 8$, chuẩn hóa, xáo trộn cố định, tách $n + 1 = 1\,001$ mẫu huấn luyện và 796 mẫu kiểm tra. \\ \hline
+\texttt{make\_pair} & Tạo $S$ và $S'$ khác nhau đúng một mẫu theo thủ tục của bài báo, trả về vị trí $k$ của mẫu khác biệt. \\ \hline
+\texttt{Logistic}, \texttt{MLP} & Hai mô hình: hồi quy logistic (loss lồi) và mạng một lớp ẩn $\tanh$ (loss không lồi), mỗi lớp có hàm khởi tạo, dự đoán và gradient trên một mẫu. \\ \hline
+\texttt{run\_pair} & Chạy SGD song song trên $S$ và $S'$ với cùng khởi tạo và cùng hoán vị mỗi epoch (coupling); ghi $\|w_t - w'_t\|$ sau mỗi 100 bước và lỗi huấn luyện/kiểm tra sau mỗi epoch. Tham số \texttt{force\_pos} đặt mẫu khác biệt ở đầu hoặc cuối epoch đầu tiên; \texttt{weight\_decay} bật weight decay. \\ \hline
+\texttt{averaged} & Lấy trung bình kết quả trên 5 cặp $(S, S')$. \\ \hline
+\texttt{main} & Chạy năm thí nghiệm, vẽ hình và lưu số liệu. \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Đoạn mã cốt lõi: SGD song song với coupling}
+
+Hai mô hình dùng chung hoán vị \texttt{order}; chỉ khi \texttt{i} trỏ đến vị trí $k$ thì hai bên nhận hai mẫu khác nhau. Đây chính là cài đặt của kỹ thuật coupling trong chứng minh Định lý~3.7 và~3.8.
+
+\begin{verbatim}
+for ep in range(epochs):
+    order = rng.permutation(N_TRAIN)
+    for i in order:
+        gp = model.grad(p, S[0][i], S[1][i])    # S
+        gq = model.grad(q, S2[0][i], S2[1][i])  # S'
+        for a, g in zip(p, gp):
+            a *= (1 - alpha * weight_decay)
+            a -= alpha * g
+        for a, g in zip(q, gq):
+            a *= (1 - alpha * weight_decay)
+            a -= alpha * g
+        t += 1
+        if t % LOG_EVERY == 0:
+            deltas.append(dist(p, q))
+\end{verbatim}
